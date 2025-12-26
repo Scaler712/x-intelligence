@@ -7,9 +7,9 @@ const axios = require("axios");
 
 // -------------------- CONFIG (constants in-file) --------------------
 const CONFIG = {
-  SCREEN_NAME: "USER YOU WANT TO SCRAPE HERE",
-  SCRAPER_KEY: "HEY HERE",
-  OUT_CSV: "name_of_file.csv",
+  SCREEN_NAME: "JamesEbringer",
+  SCRAPER_KEY: "064b8d58695f65a80e2763bf379c43df",
+  OUT_CSV: "JamesEbringer_tweets.csv",
   BASE_URL: "https://api.scraper.tech/timeline.php",
   REST_ID: "",            // keep empty unless you have one
   TIMEOUT_MS: 30_000,     // 30s per request

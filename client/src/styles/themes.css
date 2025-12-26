@@ -1,0 +1,41 @@
+/* Light Theme Variables */
+[data-theme="light"] {
+  --electric-lime: #6b9f00;
+  --electric-lime-glow: rgba(107, 159, 0, 0.2);
+  --electric-dark: #ffffff;
+  --electric-muted: #f5f5f5;
+  --electric-border: #e0e0e0;
+  --electric-text: #0a0a0a;
+  --electric-text-muted: #666666;
+
+  /* Additional light theme colors for gradients and accents */
+  --electric-gradient-start: #f9f9f9;
+  --electric-gradient-end: #ffffff;
+  --electric-shadow: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme (existing - defined in electric.css) */
+[data-theme="dark"] {
+  --electric-lime: #d4ff4a;
+  --electric-lime-glow: rgba(212, 255, 74, 0.3);
+  --electric-dark: #0a0a0a;
+  --electric-muted: #1a1a1a;
+  --electric-border: #2a2a2a;
+  --electric-text: #ffffff;
+  --electric-text-muted: #a0a0a0;
+
+  /* Additional dark theme colors */
+  --electric-gradient-start: #1a1a1a;
+  --electric-gradient-end: #0a0a0a;
+  --electric-shadow: rgba(255, 255, 255, 0.05);
+}
+
+/* Smooth theme transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Prevent transition on initial load */
+.no-transition * {
+  transition: none !important;
+}

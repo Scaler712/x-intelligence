@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Electric Design System - Complete Design System Export */
+
+/* =============================================== */
+/* CSS VARIABLES */
+/* =============================================== */
+/* Electric Design System - CSS Variables */
+:root {
+  --electric-lime: #d4ff4a;
+  --electric-lime-glow: rgba(212, 255, 74, 0.3);
+  --electric-dark: #0a0a0a;
+  --electric-muted: #1a1a1a;
+  --electric-border: #2a2a2a;
+  --electric-text: #ffffff;
+  --electric-text-muted: #a0a0a0;
+}
+
+.electric-glow {
+  box-shadow: 0 0 20px var(--electric-lime-glow);
+}
+
+.electric-pulse {
+  animation: electric-pulse 2s ease-in-out infinite;
+}
+
+@keyframes electric-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* =============================================== */
+/* TYPOGRAPHY */
+/* =============================================== */
+/* Electric Typography */
+.electric-heading {
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.electric-body {
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.electric-accent {
+  color: var(--electric-lime);
+  font-weight: 400;
+}
+
+/* =============================================== */
+/* GLOBAL STYLES */
+/* =============================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@layer base {
+  body {
+    background-color: var(--electric-dark);
+    color: var(--electric-text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
