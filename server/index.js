@@ -59,6 +59,14 @@ io.on("connection", (socket) => {
       return;
     }
 
+    // Validate scraper key
+    if (!config.SCRAPER_KEY || config.SCRAPER_KEY.trim() === '') {
+      socket.emit("scrape:error", { 
+        message: "Scraper API key is not configured. Please set SCRAPER_KEY in your .env file or environment variables. Get your API key from https://scraper.tech/panel/playground/twitter/" 
+      });
+      return;
+    }
+
     // Ensure downloads directory exists
     const downloadsDir = path.join(__dirname, "../downloads");
     if (!fs.existsSync(downloadsDir)) {
