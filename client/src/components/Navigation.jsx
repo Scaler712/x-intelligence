@@ -8,6 +8,7 @@ export default function Navigation() {
   const navItems = [
     { path: '/', label: 'Scraper' },
     { path: '/batch', label: 'Batch' },
+    { path: '/compare', label: 'Compare' },
     { path: '/history', label: 'History' },
     { path: '/settings', label: 'Settings' },
   ];

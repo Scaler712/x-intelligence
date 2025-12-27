@@ -35,12 +35,42 @@ function isPerformingTweet(tweet, filters) {
   const likes    = tweet.favorites ?? 0;
   const retweets = tweet.retweets ?? 0;
   const totalEngagement = likes + retweets + comments;
+  const content = tweet.text ?? "";
 
   // Check all thresholds - tweet must meet ALL specified minimums
   if (filters.MIN_LIKES > 0 && likes < filters.MIN_LIKES) return false;
   if (filters.MIN_RETWEETS > 0 && retweets < filters.MIN_RETWEETS) return false;
   if (filters.MIN_COMMENTS > 0 && comments < filters.MIN_COMMENTS) return false;
   if (filters.MIN_TOTAL_ENGAGEMENT > 0 && totalEngagement < filters.MIN_TOTAL_ENGAGEMENT) return false;
+
+  // Date range filtering
+  if (filters.dateRange) {
+    const tweetDate = new Date(tweet.created_at);
+    if (!isNaN(tweetDate.getTime())) {
+      if (filters.dateRange.start && tweetDate < new Date(filters.dateRange.start)) return false;
+      if (filters.dateRange.end && tweetDate > new Date(filters.dateRange.end)) return false;
+    }
+  }
+
+  // Exclude retweets (tweets starting with "RT @")
+  if (filters.excludeRetweets && content.startsWith('RT @')) return false;
+
+  // Exclude replies (tweets starting with "@")
+  if (filters.excludeReplies && content.startsWith('@')) return false;
+
+  // Media-only filter (check if tweet contains media URLs)
+  if (filters.mediaOnly) {
+    const hasMedia = /https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|mp4|webm|mov)/i.test(content) ||
+                     /pic\.twitter\.com|video\.twitter\.com/i.test(content);
+    if (!hasMedia) return false;
+  }
+
+  // Language filtering (basic check on content)
+  if (filters.language && filters.language !== 'all') {
+    // This is a simplified language check - could be enhanced with a proper language detection library
+    // For now, we'll skip this filter or implement basic detection
+    // You could add language-specific character sets or use a library like franc
+  }
 
   return true;
 }
@@ -69,7 +99,7 @@ async function fetchPage(cursor, screenName, scraperKey, baseUrl, timeout, retri
   }
 }
 
-async function scrapeTimeline(config, filters, onProgress) {
+async function scrapeTimeline(config, filters, onProgress, pauseCheck) {
   const {
     screenName,
     scraperKey,
@@ -90,7 +120,7 @@ async function scrapeTimeline(config, filters, onProgress) {
   let filtered = 0;
   let sameCursorCount = 0;
   let lastCursor = "";
-  
+
   // Track seen tweets to prevent duplicates (using content + date as key)
   const seenTweets = new Set();
 
@@ -98,6 +128,21 @@ async function scrapeTimeline(config, filters, onProgress) {
   csvRows.push("tweet_content,amount_of_comments,amount_of_likes,amount_of_retweets,date_time\n");
 
   while (true) {
+    // Check for pause
+    if (pauseCheck && pauseCheck()) {
+      console.log('Scraping paused by user');
+      // Wait for resume
+      while (pauseCheck()) {
+        await sleep(1000);
+      }
+      console.log('Scraping resumed');
+    }
+
+    // Check max tweets limit
+    if (filters.maxTweets > 0 && total >= filters.maxTweets) {
+      console.log(`Reached maxTweets limit=${filters.maxTweets}. Stopping.`);
+      break;
+    }
     if (maxPages && page >= maxPages) {
       console.log(`Reached MAX_PAGES=${maxPages}. Stopping.`);
       break;

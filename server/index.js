@@ -6,6 +6,7 @@ const path = require("path");
 const fs = require("fs");
 const config = require("./config");
 const { scrapeTimeline } = require("./scraper");
+const exportRoutes = require("./routes/export");
 
 const app = express();
 const server = http.createServer(app);
@@ -17,10 +18,13 @@ const io = new Server(server, {
 });
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase limit for export requests
 
 // Serve static files from downloads directory
 app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
+
+// Mount export routes
+app.use("/api/export", exportRoutes);
 
 // Download endpoint
 app.get("/api/download/:filename", (req, res) => {
@@ -84,6 +88,12 @@ io.on("connection", (socket) => {
       MIN_RETWEETS: filters.MIN_RETWEETS || 0,
       MIN_COMMENTS: filters.MIN_COMMENTS || 0,
       MIN_TOTAL_ENGAGEMENT: filters.MIN_TOTAL_ENGAGEMENT || 0,
+      dateRange: filters.dateRange || null,
+      excludeRetweets: filters.excludeRetweets || false,
+      excludeReplies: filters.excludeReplies || false,
+      mediaOnly: filters.mediaOnly || false,
+      language: filters.language || 'all',
+      maxTweets: filters.maxTweets || 0,
     };
 
     try {
@@ -105,10 +115,15 @@ io.on("connection", (socket) => {
         socket.emit("scrape:progress", progress);
       };
 
+      // Pause check function
+      const pauseCheck = () => {
+        return pauseStates.get(socket.id) || false;
+      };
+
       // Start scraping
       socket.emit("scrape:started", { username, filename });
 
-      const result = await scrapeTimeline(scrapeConfig, filterConfig, onProgress);
+      const result = await scrapeTimeline(scrapeConfig, filterConfig, onProgress, pauseCheck);
 
       socket.emit("scrape:complete", {
         filename: result.filename,

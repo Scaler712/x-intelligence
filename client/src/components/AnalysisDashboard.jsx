@@ -1,7 +1,14 @@
 import '../styles/electric.css';
 import ScheduleHeatmap from './ScheduleHeatmap';
 import ThemeExtractor from './ThemeExtractor';
-import EngagementTimeline from './EngagementTimeline';
+import EngagementChart from './charts/EngagementChart';
+import ScatterPlot from './charts/ScatterPlot';
+import LinkAnalysis from './analysis/LinkAnalysis';
+import MediaAnalysis from './analysis/MediaAnalysis';
+import SentimentAnalysis from './analysis/SentimentAnalysis';
+import EmojiAnalysis from './analysis/EmojiAnalysis';
+import CTADetector from './analysis/CTADetector';
+import HookPatterns from './analysis/HookPatterns';
 import { useMemo } from 'react';
 import { extractHashtags, wordFrequency } from '../utils/analytics';
 
@@ -71,7 +78,10 @@ export default function AnalysisDashboard({ tweets }) {
       </div>
 
       {/* Engagement Timeline */}
-      <EngagementTimeline tweets={tweets} />
+      <EngagementChart tweets={tweets} />
+
+      {/* Scatter Plot */}
+      <ScatterPlot tweets={tweets} />
 
       {/* Word Frequency */}
       <div className="bg-electric-dark border border-electric-border rounded-xl p-6">
@@ -109,6 +119,24 @@ export default function AnalysisDashboard({ tweets }) {
           })}
         </div>
       </div>
+
+      {/* Link Analysis */}
+      <LinkAnalysis tweets={tweets} />
+
+      {/* Media Analysis */}
+      <MediaAnalysis tweets={tweets} />
+
+      {/* Sentiment Analysis */}
+      <SentimentAnalysis tweets={tweets} />
+
+      {/* Emoji Analysis */}
+      <EmojiAnalysis tweets={tweets} />
+
+      {/* CTA Detection */}
+      <CTADetector tweets={tweets} />
+
+      {/* Hook Patterns */}
+      <HookPatterns tweets={tweets} />
     </div>
   );
 }

@@ -46,10 +46,28 @@ export function sortByEngagement(tweets) {
  * @returns {Array} - Array of hook objects with metadata
  */
 export function extractHooks(tweets, wordCount = 15) {
+  // First, deduplicate tweets by full content (normalize whitespace for comparison)
+  const seenContents = new Set();
+  const uniqueTweets = [];
+  
+  tweets.forEach((tweet, index) => {
+    // Normalize content for comparison (trim and normalize whitespace)
+    const normalizedContent = (tweet.content || '').trim().replace(/\s+/g, ' ');
+    
+    // Skip if we've seen this exact content before
+    if (normalizedContent && !seenContents.has(normalizedContent)) {
+      seenContents.add(normalizedContent);
+      uniqueTweets.push({
+        ...tweet,
+        _originalIndex: index
+      });
+    }
+  });
+  
   // Add original index to each tweet before sorting
-  const tweetsWithIndex = tweets.map((tweet, index) => ({
+  const tweetsWithIndex = uniqueTweets.map((tweet, index) => ({
     ...tweet,
-    _originalIndex: index
+    _uniqueIndex: index
   }));
   
   const sortedTweets = sortByEngagement(tweetsWithIndex);
