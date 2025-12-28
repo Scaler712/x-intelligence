@@ -25,22 +25,34 @@ export async function getApiKeys(accessToken) {
       throw new Error('API URL not configured. Please set VITE_API_URL environment variable to your Railway public URL.');
     }
 
-    const response = await fetch(`${API_URL}/api/api-keys`, {
+    const url = `${API_URL}/api/api-keys`;
+    console.log('Fetching API keys from:', url);
+
+    const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },
     });
 
+    console.log('Response status:', response.status, 'Content-Type:', response.headers.get('content-type'));
+
     if (!response.ok) {
       // Try to parse JSON error, but handle HTML responses
       const contentType = response.headers.get('content-type');
+      const text = await response.text();
+      
       if (contentType && contentType.includes('application/json')) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to fetch AI API keys: ${response.status}`);
+        try {
+          const errorData = JSON.parse(text);
+          throw new Error(errorData.error || `Failed to fetch AI API keys: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`Server returned invalid JSON. Status: ${response.status}, Response: ${text.substring(0, 200)}`);
+        }
       } else {
-        const text = await response.text();
-        throw new Error(`Server error (${response.status}). Please check your API URL configuration.`);
+        // HTML response (likely an error page)
+        console.error('Server returned HTML instead of JSON:', text.substring(0, 500));
+        throw new Error(`Server error (${response.status}). The server returned HTML instead of JSON. This usually means the API endpoint doesn't exist or the URL is incorrect. Check that VITE_API_URL is set to: https://x-intelligence-production.up.railway.app`);
       }
     }
 
@@ -64,7 +76,10 @@ export async function saveApiKey(accessToken, provider, apiKey) {
       throw new Error('API URL not configured. Please set VITE_API_URL environment variable to your Railway public URL.');
     }
 
-    const response = await fetch(`${API_URL}/api/api-keys`, {
+    const url = `${API_URL}/api/api-keys`;
+    console.log('Saving API key to:', url);
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -73,15 +88,24 @@ export async function saveApiKey(accessToken, provider, apiKey) {
       body: JSON.stringify({ provider, apiKey }),
     });
 
+    console.log('Response status:', response.status, 'Content-Type:', response.headers.get('content-type'));
+
     if (!response.ok) {
       // Try to parse JSON error, but handle HTML responses
       const contentType = response.headers.get('content-type');
+      const text = await response.text();
+      
       if (contentType && contentType.includes('application/json')) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to save AI API key: ${response.status}`);
+        try {
+          const errorData = JSON.parse(text);
+          throw new Error(errorData.error || `Failed to save AI API key: ${response.status}`);
+        } catch (parseError) {
+          throw new Error(`Server returned invalid JSON. Status: ${response.status}, Response: ${text.substring(0, 200)}`);
+        }
       } else {
-        const text = await response.text();
-        throw new Error(`Server error (${response.status}). Please check your API URL configuration.`);
+        // HTML response (likely an error page)
+        console.error('Server returned HTML instead of JSON:', text.substring(0, 500));
+        throw new Error(`Server error (${response.status}). The server returned HTML instead of JSON. This usually means the API endpoint doesn't exist or the URL is incorrect. Check that VITE_API_URL is set to: https://x-intelligence-production.up.railway.app`);
       }
     }
 
