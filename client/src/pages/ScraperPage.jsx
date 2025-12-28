@@ -19,7 +19,18 @@ import { useSearch } from '../hooks/useSearch';
 import { useFilters } from '../hooks/useFilters';
 import { saveScrape } from '../utils/storage';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001' : '');
+// Get API URL, ensuring we don't use internal Railway URLs
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  // Don't use internal Railway URLs (browsers can't access them)
+  if (envUrl && envUrl.includes('railway.internal')) {
+    console.warn('VITE_API_URL contains internal Railway URL. Please use the public Railway URL instead.');
+    return '';
+  }
+  return envUrl || (import.meta.env.DEV ? 'http://localhost:3001' : '');
+};
+
+const SOCKET_URL = getApiUrl();
 
 export default function ScraperPage() {
   const [searchParams] = useSearchParams();
@@ -74,8 +85,14 @@ export default function ScraperPage() {
   }, [searchParams]);
 
   useEffect(() => {
+    if (!SOCKET_URL || SOCKET_URL.includes('railway.internal')) {
+      setError('API URL not configured. Please set VITE_API_URL environment variable to your Railway public URL (not the internal URL).');
+      setStatus('error');
+      return;
+    }
+
     const newSocket = io(SOCKET_URL, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
     });
 
     newSocket.on('connect', () => {
@@ -89,7 +106,11 @@ export default function ScraperPage() {
 
     newSocket.on('connect_error', (err) => {
       console.error('Connection error:', err);
-      setError('Failed to connect to server. Make sure the server is running.');
+      if (SOCKET_URL.includes('railway.internal')) {
+        setError('Cannot connect: Internal Railway URL detected. Please set VITE_API_URL to your public Railway URL in Vercel environment variables.');
+      } else {
+        setError(`Failed to connect to server at ${SOCKET_URL}. Make sure the server is running and VITE_API_URL is correctly configured.`);
+      }
       setStatus('error');
     });
 

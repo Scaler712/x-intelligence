@@ -254,15 +254,16 @@ export default function OnboardingTutorial() {
           className="fixed z-[9999] pointer-events-none"
           style={{
             top: highlightedElement
-              ? `${Math.min(tooltipPosition.top, window.innerHeight - 300)}px`
-              : `${tooltipPosition.top - 150}px`,
+              ? `${Math.min(Math.max(tooltipPosition.top, 100), window.innerHeight - 350)}px`
+              : `${Math.max(100, Math.min(tooltipPosition.top - 150, window.innerHeight - 350))}px`,
             left: highlightedElement
-              ? `${Math.max(200, Math.min(tooltipPosition.left, window.innerWidth - 200))}px`
-              : `${tooltipPosition.left - 200}px`,
+              ? `${Math.max(20, Math.min(tooltipPosition.left, window.innerWidth - 420))}px`
+              : `${Math.max(20, Math.min(tooltipPosition.left - 200, window.innerWidth - 420))}px`,
             transform: highlightedElement
               ? 'translateX(-50%)'
               : 'translate(-50%, -50%)',
-            maxWidth: '90vw',
+            maxWidth: '400px',
+            width: 'auto',
           }}
         >
         <div className="bg-[#1a1a1a] border-2 border-[#2563eb] rounded-lg p-6 shadow-2xl max-w-md pointer-events-auto">

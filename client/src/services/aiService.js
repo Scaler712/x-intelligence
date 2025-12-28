@@ -1,7 +1,18 @@
 /**
  * AI service for API calls
  */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Get API URL, ensuring we don't use internal Railway URLs
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  // Don't use internal Railway URLs (browsers can't access them)
+  if (envUrl && envUrl.includes('railway.internal')) {
+    console.warn('VITE_API_URL contains internal Railway URL. Please use the public Railway URL instead.');
+    return '';
+  }
+  return envUrl || (import.meta.env.DEV ? 'http://localhost:3001' : '');
+};
+
+const API_URL = getApiUrl();
 
 /**
  * Get all API keys for current user (masked)
@@ -10,6 +21,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
  */
 export async function getApiKeys(accessToken) {
   try {
+    if (!API_URL || API_URL.includes('railway.internal')) {
+      throw new Error('API URL not configured. Please set VITE_API_URL environment variable to your Railway public URL.');
+    }
+
     const response = await fetch(`${API_URL}/api/api-keys`, {
       headers: {
         'Content-Type': 'application/json',
@@ -18,8 +33,15 @@ export async function getApiKeys(accessToken) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch AI API keys');
+      // Try to parse JSON error, but handle HTML responses
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch AI API keys: ${response.status}`);
+      } else {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}). Please check your API URL configuration.`);
+      }
     }
 
     return await response.json();
@@ -38,6 +60,10 @@ export async function getApiKeys(accessToken) {
  */
 export async function saveApiKey(accessToken, provider, apiKey) {
   try {
+    if (!API_URL || API_URL.includes('railway.internal')) {
+      throw new Error('API URL not configured. Please set VITE_API_URL environment variable to your Railway public URL.');
+    }
+
     const response = await fetch(`${API_URL}/api/api-keys`, {
       method: 'POST',
       headers: {
@@ -48,8 +74,15 @@ export async function saveApiKey(accessToken, provider, apiKey) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to save AI API key');
+      // Try to parse JSON error, but handle HTML responses
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to save AI API key: ${response.status}`);
+      } else {
+        const text = await response.text();
+        throw new Error(`Server error (${response.status}). Please check your API URL configuration.`);
+      }
     }
 
     return await response.json();
