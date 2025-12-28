@@ -59,9 +59,6 @@ app.use("/api/export", exportRoutes);
 // Serve static files from downloads directory (after API routes)
 app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
 
-// Serve static files from downloads directory (after API routes)
-app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
-
 // Download endpoint
 app.get("/api/download/:filename", (req, res) => {
   const filename = req.params.filename;
