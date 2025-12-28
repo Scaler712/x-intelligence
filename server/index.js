@@ -30,7 +30,18 @@ const io = new Server(server, {
   }
 });
 
-app.use(cors());
+// CORS configuration - allow all origins for now, with credentials
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json({ limit: '50mb' })); // Increase limit for export requests
 
 // Serve static files from downloads directory

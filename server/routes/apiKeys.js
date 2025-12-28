@@ -226,6 +226,9 @@ async function getDecryptedApiKey(userId, provider) {
   }
 }
 
+// Export router as default
 module.exports = router;
+
+// Export helper function separately
 module.exports.getDecryptedApiKey = getDecryptedApiKey;
 
