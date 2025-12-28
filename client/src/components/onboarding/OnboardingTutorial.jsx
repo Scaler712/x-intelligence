@@ -182,7 +182,13 @@ export default function OnboardingTutorial() {
     };
   }, [isActive, currentStep, currentConfig]);
 
-  if (!isActive || !currentStep || !currentConfig) {
+  // Show tutorial even if config is loading (better UX)
+  if (!isActive || !currentStep) {
+    return null;
+  }
+
+  // If config doesn't exist yet, show a generic welcome
+  if (!currentConfig) {
     return null;
   }
 

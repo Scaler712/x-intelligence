@@ -5,6 +5,7 @@ import Card from '../components/ui/Card';
 import FormField from '../components/ui/FormField';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import Logo from '../components/ui/Logo';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -37,9 +38,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-text-primary mb-2">
-            X <span className="text-blue-primary">Intelligence</span>
-          </h1>
+          <div className="flex justify-center mb-4">
+            <Logo size="default" showText={true} />
+          </div>
           <p className="text-text-muted">
             Sign in to your account
           </p>

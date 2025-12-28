@@ -264,6 +264,7 @@ export default function ScraperPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   disabled={status === 'scraping'}
                   placeholder="Enter username (without @)"
+                  data-tutorial="username-input"
                 />
               </FormField>
 
@@ -402,7 +403,7 @@ export default function ScraperPage() {
                   onTabChange={setActiveTab}
                   tweetCount={finalTweets.length}
                 />
-                <div className="mt-6">
+                <div className="mt-6" data-tutorial="tweet-list">
                   {activeTab === 'tweets' && <TweetList tweets={finalTweets} />}
                   {activeTab === 'hooks' && <HooksList tweets={finalTweets} onHookClick={handleHookClick} />}
                   {activeTab === 'analysis' && (

@@ -120,7 +120,7 @@ export default function SettingsPage() {
       <div className="px-8 py-8">
         <div className="space-y-12">
           {/* API Configuration Section */}
-          <section className="space-y-6">
+          <section className="space-y-6" data-tutorial="api-keys-section">
             <h2 className="text-xl font-light text-foreground tracking-tight">API Configuration</h2>
             
             <FormField label="Scraper API Key">

@@ -26,7 +26,7 @@ export function OnboardingProvider({ children }) {
   useEffect(() => {
     const completed = localStorage.getItem(STORAGE_KEY) === 'true';
     if (!completed) {
-      // Start tutorial
+      // Start tutorial immediately - navigation will handle routing
       setIsActive(true);
       setCurrentStep(TUTORIAL_STEPS.SETTINGS_API_KEYS);
     }

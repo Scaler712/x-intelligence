@@ -5,6 +5,7 @@ import Card from '../components/ui/Card';
 import FormField from '../components/ui/FormField';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
+import Logo from '../components/ui/Logo';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -49,9 +50,12 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-bg-primary flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-text-primary mb-2">
+          <div className="flex justify-center mb-4">
+            <Logo size="default" showText={true} />
+          </div>
+          <h2 className="text-xl font-semibold text-text-primary mb-2">
             Create Account
-          </h1>
+          </h2>
           <p className="text-text-muted">
             Sign up for X Intelligence
           </p>

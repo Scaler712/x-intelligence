@@ -6,7 +6,7 @@ export default function TabNavigation({ activeTab, onTabChange, tweetCount }) {
   ];
 
   return (
-    <div className="inline-flex items-center gap-1 p-1 bg-glass-background backdrop-blur-md border border-glass-border rounded-full mb-6">
+    <div className="inline-flex items-center gap-1 p-1 bg-glass-background backdrop-blur-md border border-glass-border rounded-full mb-6" data-tutorial="tabs">
       {tabs.map((tab) => (
         <button
           key={tab.id}
