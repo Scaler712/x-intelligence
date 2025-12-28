@@ -1,4 +1,3 @@
-import '../styles/electric.css';
 
 export default function ScrapeCard({ scrape, onView, onScrapeAgain, onDelete }) {
   const formatDate = (dateString) => {
@@ -13,7 +12,7 @@ export default function ScrapeCard({ scrape, onView, onScrapeAgain, onDelete }) 
   };
 
   return (
-    <div className="bg-electric-muted border border-electric-border rounded-xl p-6 hover:border-electric-lime/50 transition-all duration-300 relative overflow-hidden group">
+    <div className="bg-electric-muted border border-electric-border rounded-xl p-6 card-hover relative overflow-hidden group smooth-scale-in">
       <div className="relative z-10">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -44,7 +43,7 @@ export default function ScrapeCard({ scrape, onView, onScrapeAgain, onDelete }) 
         {/* Engagement Breakdown */}
         {scrape.stats && (
           <div className="flex gap-4 text-sm text-electric-text-muted mb-4 pb-4 border-b border-electric-border">
-            <span>✓ {scrape.stats.total || 0} scraped</span>
+            <span>✓ {scrape.stats.total || 0} collected</span>
             {scrape.stats.filtered > 0 && (
               <span>⊘ {scrape.stats.filtered} filtered</span>
             )}
@@ -55,20 +54,20 @@ export default function ScrapeCard({ scrape, onView, onScrapeAgain, onDelete }) 
         <div className="flex gap-2">
           <button
             onClick={onView}
-            className="flex-1 inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 bg-electric-lime text-black hover:bg-electric-lime/90 electric-glow h-9 px-4 text-sm"
+            className="btn-smooth flex-1 inline-flex items-center justify-center rounded-lg font-light bg-electric-lime text-black hover:bg-electric-lime/90 electric-glow h-9 px-4 text-sm"
           >
             View Details
           </button>
           <button
             onClick={onScrapeAgain}
-            className="flex-1 inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 bg-electric-dark border border-electric-border text-electric-text hover:bg-electric-border h-9 px-4 text-sm"
+            className="btn-smooth flex-1 inline-flex items-center justify-center rounded-lg font-light bg-electric-dark border border-electric-border text-electric-text hover:bg-electric-border h-9 px-4 text-sm"
           >
-            Scrape Again
+            Re-analyze
           </button>
           <button
             onClick={onDelete}
-            className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 bg-electric-dark border border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 h-9 px-4 text-sm"
-            title="Delete scrape"
+            className="btn-smooth inline-flex items-center justify-center rounded-lg font-light bg-electric-dark border border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 h-9 px-4 text-sm"
+            title="Delete analysis"
           >
             🗑️
           </button>

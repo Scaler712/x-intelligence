@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
 import { analyzeSentiment } from '../../utils/sentimentAnalysis';
 
 export default function SentimentAnalysis({ tweets }) {

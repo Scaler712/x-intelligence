@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
 import { analyzeMedia } from '../../utils/mediaAnalysis';
 
 export default function MediaAnalysis({ tweets }) {

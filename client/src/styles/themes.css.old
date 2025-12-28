@@ -1,3 +1,20 @@
+/* Dark Theme (default - defined in electric.css :root, but override here for data-theme) */
+[data-theme="dark"],
+:root:not([data-theme="light"]) {
+  --electric-lime: #d4ff4a;
+  --electric-lime-glow: rgba(212, 255, 74, 0.3);
+  --electric-dark: #0a0a0a;
+  --electric-muted: #1a1a1a;
+  --electric-border: #2a2a2a;
+  --electric-text: #ffffff;
+  --electric-text-muted: #a0a0a0;
+
+  /* Additional dark theme colors */
+  --electric-gradient-start: #1a1a1a;
+  --electric-gradient-end: #0a0a0a;
+  --electric-shadow: rgba(255, 255, 255, 0.05);
+}
+
 /* Light Theme Variables */
 [data-theme="light"] {
   --electric-lime: #6b9f00;
@@ -12,22 +29,6 @@
   --electric-gradient-start: #f9f9f9;
   --electric-gradient-end: #ffffff;
   --electric-shadow: rgba(0, 0, 0, 0.1);
-}
-
-/* Dark Theme (existing - defined in electric.css) */
-[data-theme="dark"] {
-  --electric-lime: #d4ff4a;
-  --electric-lime-glow: rgba(212, 255, 74, 0.3);
-  --electric-dark: #0a0a0a;
-  --electric-muted: #1a1a1a;
-  --electric-border: #2a2a2a;
-  --electric-text: #ffffff;
-  --electric-text-muted: #a0a0a0;
-
-  /* Additional dark theme colors */
-  --electric-gradient-start: #1a1a1a;
-  --electric-gradient-end: #0a0a0a;
-  --electric-shadow: rgba(255, 255, 255, 0.05);
 }
 
 /* Smooth theme transitions */

@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
 import { categorizeHooks } from '../../utils/contentAnalysis';
 
 export default function HookPatterns({ tweets }) {

@@ -1,4 +1,4 @@
-import '../../styles/electric.css';
+import Button from '../ui/Button';
 
 export default function ScrapeQueue({ queue, onRemove }) {
   if (queue.length === 0) {
@@ -7,11 +7,11 @@ export default function ScrapeQueue({ queue, onRemove }) {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return 'text-electric-text-muted';
-      case 'running': return 'text-electric-lime';
+      case 'pending': return 'text-text-muted';
+      case 'running': return 'text-blue-primary';
       case 'completed': return 'text-green-400';
       case 'failed': return 'text-red-400';
-      default: return 'text-electric-text';
+      default: return 'text-text-primary';
     }
   };
 
@@ -26,21 +26,21 @@ export default function ScrapeQueue({ queue, onRemove }) {
   };
 
   return (
-    <div className="bg-electric-muted border border-electric-border rounded-xl p-6">
-      <h3 className="electric-heading text-xl text-electric-text mb-4">
-        Scrape Queue <span className="electric-accent">({queue.length})</span>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-text-primary">
+        Analysis Queue <span className="text-blue-primary">({queue.length})</span>
       </h3>
 
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {queue.map((item, index) => (
           <div
             key={item.id || index}
-            className="flex items-center justify-between p-3 bg-electric-dark rounded-lg border border-electric-border"
+            className="flex items-center justify-between p-3 hover:bg-bg-hover transition-colors rounded-md"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl">{getStatusIcon(item.status)}</span>
               <div>
-                <div className="electric-body text-electric-text font-medium">
+                <div className="text-text-primary font-medium">
                   @{item.username}
                 </div>
                 <div className={`text-sm ${getStatusColor(item.status)}`}>
@@ -53,7 +53,7 @@ export default function ScrapeQueue({ queue, onRemove }) {
             {(item.status === 'completed' || item.status === 'failed') && onRemove && (
               <button
                 onClick={() => onRemove(item.id)}
-                className="text-electric-text-muted hover:text-red-400 transition-colors"
+                className="text-[#a0a0a0] hover:text-red-400 px-2 py-1"
                 title="Remove from queue"
               >
                 ✕

@@ -6,17 +6,56 @@ export default {
   ],
   theme: {
     extend: {
+      // Liquid Glass - Tailwind Config
       colors: {
-        'electric-lime': '#d4ff4a',
-        'electric-lime-glow': 'rgba(212, 255, 74, 0.3)',
-        'electric-dark': '#0a0a0a',
-        'electric-muted': '#1a1a1a',
-        'electric-border': '#2a2a2a',
-        'electric-text': '#ffffff',
-        'electric-text-muted': '#a0a0a0'
-      }
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))'
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))'
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))'
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))'
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))'
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))'
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))'
+        },
+        glass: {
+          background: 'var(--glass-background)',
+          border: 'var(--glass-border)',
+          shadow: 'var(--glass-shadow)'
+        }
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      spacing: {
+        'sidebar': '260px',
+      },
     },
   },
   plugins: [],
 }
-

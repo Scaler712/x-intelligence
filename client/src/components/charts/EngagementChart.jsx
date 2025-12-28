@@ -9,7 +9,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import '../../styles/electric.css';
 import {
   CHART_COLORS,
   CHART_STYLES,

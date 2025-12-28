@@ -1,5 +1,3 @@
-import '../styles/electric.css';
-
 export default function TabNavigation({ activeTab, onTabChange, tweetCount }) {
   const tabs = [
     { id: 'tweets', label: 'Tweets', count: tweetCount },
@@ -8,25 +6,28 @@ export default function TabNavigation({ activeTab, onTabChange, tweetCount }) {
   ];
 
   return (
-    <div className="bg-electric-muted border border-electric-border rounded-xl p-2 flex gap-2">
+    <div className="inline-flex items-center gap-1 p-1 bg-glass-background backdrop-blur-md border border-glass-border rounded-full mb-6">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={`
-            flex-1 inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 h-10 px-4 text-sm
-            ${
-              activeTab === tab.id
-                ? 'bg-electric-lime text-black electric-glow'
-                : 'bg-electric-dark text-electric-text hover:bg-electric-border border border-electric-border'
+            flex items-center gap-2 px-4 py-2 rounded-full text-sm font-light transition-none
+            ${activeTab === tab.id 
+              ? 'bg-foreground/10 text-foreground' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-foreground/5'
             }
           `}
         >
           {tab.label}
           {tab.count > 0 && (
-            <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
-              activeTab === tab.id ? 'bg-black/20' : 'bg-electric-muted'
-            }`}>
+            <span className={`
+              px-2 py-0.5 text-xs rounded-md font-light
+              ${activeTab === tab.id 
+                ? 'bg-foreground/10 text-foreground' 
+                : 'bg-glass-background text-muted-foreground'
+              }
+            `}>
               {tab.count}
             </span>
           )}
@@ -35,4 +36,3 @@ export default function TabNavigation({ activeTab, onTabChange, tweetCount }) {
     </div>
   );
 }
-

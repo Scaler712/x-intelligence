@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../styles/electric.css';
 
 export default function EngagementTimeline({ tweets }) {
   const timelineData = useMemo(() => {

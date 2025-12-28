@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../styles/electric.css';
 import { extractThemes } from '../utils/analytics';
 
 export default function ThemeExtractor({ tweets }) {

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import '../styles/electric.css';
 import { loadScrape, deleteScrape } from '../utils/storage';
+import PageHeader from '../components/layout/PageHeader';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
 import TweetList from '../components/TweetList';
 import HooksList from '../components/HooksList';
 import TabNavigation from '../components/TabNavigation';
@@ -25,26 +27,26 @@ export default function ScrapeDetailsPage() {
       setLoading(true);
       const scrapeData = await loadScrape(Number(scrapeId));
       if (!scrapeData) {
-        setError('Scrape not found');
+        setError('Analysis not found');
         return;
       }
       setScrape(scrapeData);
     } catch (err) {
-      console.error('Error loading scrape:', err);
-      setError('Failed to load scrape');
+      console.error('Error loading analysis:', err);
+      setError('Failed to load analysis');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this scrape? This cannot be undone.')) {
+    if (window.confirm('Are you sure you want to delete this analysis? This cannot be undone.')) {
       try {
         await deleteScrape(Number(scrapeId));
         navigate('/history');
       } catch (err) {
-        console.error('Error deleting scrape:', err);
-        alert('Failed to delete scrape');
+        console.error('Error deleting analysis:', err);
+        alert('Failed to delete analysis');
       }
     }
   };
@@ -57,10 +59,15 @@ export default function ScrapeDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-electric-dark p-4 md:p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-electric-muted border border-electric-border rounded-xl p-12 text-center">
-            <p className="electric-body text-electric-text-muted">Loading scrape details...</p>
+      <div>
+        <PageHeader
+          breadcrumbs={['Home', 'History', 'Details']}
+          title="Loading..."
+          subtitle=""
+        />
+        <div className="px-8 pb-10">
+          <div className="text-center py-12 text-[#a0a0a0]">
+            Loading analysis...
           </div>
         </div>
       </div>
@@ -69,16 +76,18 @@ export default function ScrapeDetailsPage() {
 
   if (error || !scrape) {
     return (
-      <div className="min-h-screen bg-electric-dark p-4 md:p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-red-900/20 border border-red-500 rounded-xl p-12 text-center">
-            <p className="text-red-400">{error || 'Scrape not found'}</p>
-            <button
-              onClick={() => navigate('/history')}
-              className="mt-4 inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 bg-electric-lime text-black hover:bg-electric-lime/90 electric-glow h-10 px-6"
-            >
+      <div>
+        <PageHeader
+          breadcrumbs={['Home', 'History', 'Details']}
+          title="Error"
+          subtitle={error || 'Analysis not found'}
+        />
+        <div className="px-8 pb-10">
+          <div className="text-center py-12">
+            <p className="text-[#a0a0a0] mb-4">{error || 'Analysis not found'}</p>
+            <Button variant="primary" onClick={() => navigate('/history')}>
               Back to History
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -86,57 +95,68 @@ export default function ScrapeDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-electric-dark p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="electric-heading text-4xl md:text-5xl text-electric-text mb-2">
-              @{scrape.username}
-            </h1>
-            <p className="electric-body text-electric-text-muted">
-              Scraped on {new Date(scrape.date).toLocaleString()}
-            </p>
-          </div>
+    <div>
+      <PageHeader
+        breadcrumbs={['Home', 'History', `@${scrape.username}`]}
+        title={`@${scrape.username}`}
+        subtitle={`Analyzed on ${new Date(scrape.date).toLocaleString()}`}
+      />
 
+      <div className="px-8 pb-10">
+        <div className="space-y-6">
+          {/* Actions */}
           <div className="flex gap-3">
-            <button
-              onClick={handleScrapeAgain}
-              className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 bg-electric-lime text-black hover:bg-electric-lime/90 electric-glow h-10 px-6"
-            >
-              Scrape Again
-            </button>
-            <button
-              onClick={handleDelete}
-              className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 bg-electric-dark border border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500 h-10 px-6"
-            >
-              Delete
-            </button>
+            <Button variant="primary" onClick={handleScrapeAgain}>
+              Analyze Again
+            </Button>
+            <Button variant="danger" onClick={handleDelete}>
+              Delete Analysis
+            </Button>
           </div>
-        </div>
 
-        {/* Main Content Area with Sidebar */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Stats Sidebar */}
-          <StatsSidebar tweets={scrape.tweets || []} />
+          {/* Stats */}
+          {scrape.stats && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+              <div>
+                <div className="text-xs text-[#a0a0a0] mb-1">Total Tweets</div>
+                <div className="text-xl font-bold text-white">{scrape.stats.total || 0}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#a0a0a0] mb-1">Filtered</div>
+                <div className="text-xl font-bold text-white">{scrape.stats.filtered || 0}</div>
+              </div>
+            </div>
+          )}
 
-          {/* Main Content */}
-          <div className="flex-1 space-y-6">
-            {/* Tab Navigation */}
-            <TabNavigation 
-              activeTab={activeTab} 
-              onTabChange={setActiveTab}
-              tweetCount={scrape.tweets?.length || 0}
-            />
+          {/* Tabs */}
+          <TabNavigation
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tweetCount={scrape.tweets?.length || 0}
+          />
 
-            {/* Content Area - Tabs */}
+          {/* Content */}
+          <div className="mt-4">
             {activeTab === 'tweets' && <TweetList tweets={scrape.tweets || []} />}
             {activeTab === 'hooks' && <HooksList tweets={scrape.tweets || []} />}
-            {activeTab === 'analysis' && <AnalysisDashboard tweets={scrape.tweets || []} />}
+            {activeTab === 'analysis' && (
+              <AnalysisDashboard 
+                tweets={scrape.tweets || []} 
+                scrapeId={scrapeId}
+                stats={scrape.stats}
+                username={scrape.username}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {/* Stats Sidebar */}
+      {scrape.tweets && scrape.tweets.length > 0 && (
+        <div className="mt-6 px-8">
+          <StatsSidebar tweets={scrape.tweets} />
+        </div>
+      )}
     </div>
   );
 }
-

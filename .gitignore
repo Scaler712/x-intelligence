@@ -1,5 +1,58 @@
-node_modules
+# Dependencies
+node_modules/
+client/node_modules/
+package-lock.json
+client/package-lock.json
+
+# Environment variables
 .env
-downloads/
+.env.local
+.env.*.local
+client/.env
+client/.env.local
+client/.env.*.local
+
+# Build outputs
 dist/
+client/dist/
+build/
+client/build/
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Downloads (user data)
+downloads/
+*.csv
+
+# Vercel
+.vercel
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

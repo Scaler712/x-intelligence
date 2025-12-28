@@ -1,27 +1,28 @@
-import '../styles/electric.css';
+import Button from './ui/Button';
+import { DownloadIcon } from './ui/Icons';
 
 export default function StatusBar({ status, stats, csvFilename, onDownload }) {
   const getStatusColor = () => {
     switch (status) {
       case 'scraping':
-        return 'text-electric-lime electric-pulse';
+        return 'var(--color-blue)';
       case 'complete':
-        return 'text-electric-lime';
+        return 'var(--color-text)';
       case 'error':
-        return 'text-red-400';
+        return 'var(--color-red)';
       default:
-        return 'text-electric-text-muted';
+        return 'var(--color-text-muted)';
     }
   };
 
   const getStatusText = () => {
     switch (status) {
       case 'idle':
-        return 'Ready to scrape';
+        return 'Ready to analyze';
       case 'scraping':
-        return 'Scraping in progress...';
+        return 'Analyzing in progress...';
       case 'complete':
-        return 'Scraping complete!';
+        return 'Analysis complete';
       case 'error':
         return 'Error occurred';
       default:
@@ -30,48 +31,31 @@ export default function StatusBar({ status, stats, csvFilename, onDownload }) {
   };
 
   return (
-    <div className="bg-electric-muted border border-electric-border rounded-xl p-6 relative overflow-hidden">
-      <div className="relative z-10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`w-3 h-3 rounded-full ${
-                status === 'scraping' ? 'bg-electric-lime electric-pulse' :
-                status === 'complete' ? 'bg-electric-lime' :
-                status === 'error' ? 'bg-red-400' :
-                'bg-electric-text-muted'
-              }`}></div>
-              <span className={`electric-body font-medium ${getStatusColor()}`}>
-                {getStatusText()}
-              </span>
-            </div>
-            
-            {stats && (
-              <div className="flex flex-wrap gap-4 text-sm text-electric-text-muted">
-                <span>
-                  <span className="electric-accent">✓</span> {stats.total || 0} tweets scraped
-                </span>
-                {stats.filtered !== undefined && stats.filtered > 0 && (
-                  <span>
-                    <span className="electric-accent">⊘</span> {stats.filtered} filtered out
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {status === 'complete' && csvFilename && (
-            <button
-              onClick={onDownload}
-              className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 bg-electric-lime text-black hover:bg-electric-lime/90 electric-glow h-10 px-6"
-            >
-              Download CSV
-            </button>
+    <div className="glass-panel" style={{ padding: 'var(--space-5)' }}>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p style={{ fontSize: 'var(--text-xs)', fontWeight: 500, color: getStatusColor() }}>
+            {getStatusText()}
+          </p>
+          {stats && (
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>
+              {stats.total} tweets collected
+              {stats.filtered > 0 && ` • ${stats.filtered} filtered`}
+            </p>
           )}
         </div>
+
+        {csvFilename && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onDownload}
+          >
+            <DownloadIcon className="w-3.5 h-3.5" />
+            Download CSV
+          </Button>
+        )}
       </div>
-      <div className="absolute inset-0 bg-gradient-to-br from-electric-lime/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
     </div>
   );
 }
-

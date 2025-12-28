@@ -1,13 +1,15 @@
 const ExcelJS = require('exceljs');
 
 /**
- * Generate Excel file from tweets and analytics
+ * Generate enhanced Excel file from tweets, analytics, and AI insights
  * @param {Array} tweets - Array of tweet objects
  * @param {Object} analytics - Analytics data
  * @param {String} username - Twitter username
+ * @param {Object} options - Additional options
+ * @param {Object} options.aiInsights - AI insights data (optional)
  * @returns {Promise<Buffer>} - Excel file buffer
  */
-async function generateExcel(tweets, analytics, username) {
+async function generateExcel(tweets, analytics, username, options = {}) {
   const workbook = new ExcelJS.Workbook();
 
   // Create tweets sheet
@@ -58,7 +60,7 @@ async function generateExcel(tweets, analytics, username) {
     fgColor: { argb: 'FFD4FF4A' },
   };
 
-  // Add analytics data
+  // Add analytics data with better formatting
   if (analytics) {
     analyticsSheet.addRow({ metric: 'Total Tweets', value: analytics.totalTweets || tweets.length });
     analyticsSheet.addRow({ metric: 'Total Likes', value: analytics.totalLikes || 0 });
@@ -66,11 +68,110 @@ async function generateExcel(tweets, analytics, username) {
     analyticsSheet.addRow({ metric: 'Total Comments', value: analytics.totalComments || 0 });
     analyticsSheet.addRow({ metric: 'Total Engagement', value: analytics.totalEngagement || 0 });
     analyticsSheet.addRow({ metric: '', value: '' }); // Empty row
-    analyticsSheet.addRow({ metric: 'Average Likes', value: analytics.avgLikes || 0 });
-    analyticsSheet.addRow({ metric: 'Average Retweets', value: analytics.avgRetweets || 0 });
-    analyticsSheet.addRow({ metric: 'Average Comments', value: analytics.avgComments || 0 });
-    analyticsSheet.addRow({ metric: 'Average Engagement', value: analytics.avgEngagement || 0 });
+    analyticsSheet.addRow({ metric: 'Average Likes', value: Math.round(analytics.avgLikes || 0) });
+    analyticsSheet.addRow({ metric: 'Average Retweets', value: Math.round(analytics.avgRetweets || 0) });
+    analyticsSheet.addRow({ metric: 'Average Comments', value: Math.round(analytics.avgComments || 0) });
+    analyticsSheet.addRow({ metric: 'Average Engagement', value: Math.round(analytics.avgEngagement || 0) });
   }
+
+  // AI Insights sheet (if provided)
+  if (options.aiInsights) {
+    const insightsSheet = workbook.addWorksheet('AI Insights');
+    const insights = options.aiInsights;
+
+    // Hook Patterns
+    insightsSheet.columns = [
+      { header: 'Hook Pattern', key: 'pattern', width: 60 }
+    ];
+    insightsSheet.getRow(1).font = { bold: true };
+    insightsSheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD4FF4A' }
+    };
+
+    if (insights.hookPatterns && insights.hookPatterns.length > 0) {
+      insights.hookPatterns.forEach(pattern => {
+        insightsSheet.addRow({ pattern });
+      });
+    }
+
+    insightsSheet.addRow({ pattern: '' }); // Empty row
+
+    // Content Themes
+    const themesHeaderRow = insightsSheet.addRow({ pattern: 'Content Themes' });
+    themesHeaderRow.font = { bold: true };
+    insightsSheet.addRow({ pattern: '' });
+
+    if (insights.contentThemes && insights.contentThemes.length > 0) {
+      insights.contentThemes.forEach(theme => {
+        insightsSheet.addRow({ pattern: theme });
+      });
+    }
+
+    insightsSheet.addRow({ pattern: '' }); // Empty row
+
+    // Recommendations
+    const recHeaderRow = insightsSheet.addRow({ pattern: 'Recommendations' });
+    recHeaderRow.font = { bold: true };
+    insightsSheet.addRow({ pattern: '' });
+
+    if (insights.recommendations && insights.recommendations.length > 0) {
+      insights.recommendations.forEach(rec => {
+        insightsSheet.addRow({ pattern: `${rec.title || rec.type}: ${rec.description || ''}` });
+      });
+    }
+
+    // Strategy Suggestions
+    insightsSheet.addRow({ pattern: '' });
+    const strategyHeaderRow = insightsSheet.addRow({ pattern: 'Strategy Suggestions' });
+    strategyHeaderRow.font = { bold: true };
+    insightsSheet.addRow({ pattern: '' });
+
+    if (insights.strategySuggestions && insights.strategySuggestions.length > 0) {
+      insights.strategySuggestions.forEach(suggestion => {
+        insightsSheet.addRow({ pattern: suggestion });
+      });
+    }
+  }
+
+  // Performance Analysis sheet with conditional formatting
+  const analysisSheet = workbook.addWorksheet('Performance Analysis');
+  analysisSheet.columns = [
+    { header: 'Engagement Range', key: 'range', width: 30 },
+    { header: 'Count', key: 'count', width: 15 },
+    { header: 'Percentage', key: 'percentage', width: 20 }
+  ];
+
+  analysisSheet.getRow(1).font = { bold: true };
+  analysisSheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFD4FF4A' }
+  };
+
+  // Calculate engagement distribution
+  const ranges = [
+    { min: 0, max: 100, label: '0-100' },
+    { min: 101, max: 500, label: '101-500' },
+    { min: 501, max: 1000, label: '501-1,000' },
+    { min: 1001, max: 5000, label: '1,001-5,000' },
+    { min: 5001, max: Infinity, label: '5,001+' }
+  ];
+
+  ranges.forEach(range => {
+    const count = tweets.filter(t => {
+      const engagement = (t.likes || 0) + (t.retweets || 0) + (t.comments || 0);
+      return engagement >= range.min && engagement <= range.max;
+    }).length;
+    const percentage = tweets.length > 0 ? ((count / tweets.length) * 100).toFixed(1) : 0;
+
+    analysisSheet.addRow({
+      range: range.label,
+      count: count,
+      percentage: `${percentage}%`
+    });
+  });
 
   // Generate buffer
   const buffer = await workbook.xlsx.writeBuffer();

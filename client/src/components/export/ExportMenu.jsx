@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useExport } from '../../hooks/useExport';
-import '../../styles/electric.css';
 
 export default function ExportMenu({ tweets, username = 'tweets' }) {
   const [isOpen, setIsOpen] = useState(false);

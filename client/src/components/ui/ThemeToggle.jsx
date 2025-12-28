@@ -1,5 +1,4 @@
 import { useTheme } from '../../hooks/useTheme';
-import '../../styles/electric.css';
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
@@ -7,12 +6,11 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 h-9 w-9 bg-electric-muted border border-electric-border text-electric-text hover:bg-electric-border hover:border-electric-lime"
+      className="inline-flex items-center justify-center rounded-lg p-2 bg-secondary hover:bg-secondary/80 text-foreground transition-all"
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
       {theme === 'dark' ? (
-        // Sun icon
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -34,7 +32,6 @@ export default function ThemeToggle() {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
         </svg>
       ) : (
-        // Moon icon
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"

@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import '../styles/electric.css';
 import { extractHook } from '../utils/hooksExtractor';
+import Button from './ui/Button';
+import { CopyIcon } from './ui/Icons';
 
 export default function TweetList({ tweets }) {
   const listRef = useRef(null);
-  const [viewMode, setViewMode] = useState('full'); // 'full' or 'compact' (hook + engagement)
+  const [viewMode, setViewMode] = useState('full');
 
   useEffect(() => {
-    // Auto-scroll to bottom when new tweets arrive
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
@@ -15,9 +15,9 @@ export default function TweetList({ tweets }) {
 
   if (tweets.length === 0) {
     return (
-      <div className="bg-electric-muted border border-electric-border rounded-xl p-12 text-center">
-        <p className="electric-body text-electric-text-muted">
-          No tweets scraped yet. Enter a username and start scraping to see tweets here.
+      <div className="liquid-glass p-12 text-center">
+        <p className="text-muted-foreground text-xs font-light">
+          No tweets collected yet. Enter a username and start analysis to see tweets here.
         </p>
       </div>
     );
@@ -32,102 +32,83 @@ export default function TweetList({ tweets }) {
   };
 
   return (
-    <div className="bg-electric-muted border border-electric-border rounded-xl overflow-hidden relative">
-      <div className="p-4 border-b border-electric-border flex items-center justify-between">
-        <h3 className="electric-heading text-xl text-electric-text">
-          Scraped Tweets <span className="electric-accent">({tweets.length})</span>
+    <div className="overflow-hidden liquid-glass">
+      <div className="p-3 flex items-center justify-between border-b border-glass-border">
+        <h3 className="text-xs font-light text-foreground tracking-tight">
+          Collected Tweets <span className="glass-accent">({tweets.length})</span>
         </h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode(viewMode === 'full' ? 'compact' : 'full')}
-            className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 h-9 px-4 text-sm bg-electric-dark border border-electric-border text-electric-text hover:bg-electric-border"
-          >
-            {viewMode === 'full' ? '📋 Hook View' : '📄 Full View'}
-          </button>
-        </div>
+        <Button
+          variant="ghost"
+          onClick={() => setViewMode(viewMode === 'full' ? 'compact' : 'full')}
+          className="text-xs h-7 px-3"
+        >
+          {viewMode === 'full' ? 'Hook View' : 'Full View'}
+        </Button>
       </div>
       
       <div
         ref={listRef}
-        className="max-h-[600px] overflow-y-auto p-4 space-y-4"
+        className="max-h-[600px] overflow-y-auto p-4 space-y-3"
         style={{ scrollBehavior: 'smooth' }}
       >
         {tweets.map((tweet, index) => {
           const hook = extractHook(tweet.content, 15);
-          const totalEngagement = tweet.likes + tweet.retweets + tweet.comments;
+          const totalEngagement = (tweet.likes || 0) + (tweet.retweets || 0) + (tweet.comments || 0);
           const showFull = viewMode === 'full';
           
           return (
             <div
               key={index}
               data-tweet-index={index}
-              className="bg-electric-dark border border-electric-border rounded-lg p-4 hover:border-electric-lime/50 transition-all duration-300 relative overflow-hidden group"
+              className="p-4 hover:bg-glass-background transition-none rounded-xl group border border-transparent hover:border-glass-border"
             >
-              <div className="relative z-10">
-                {showFull ? (
-                  <>
-                    <p className="electric-body text-electric-text mb-3 whitespace-pre-wrap break-words">
-                      {tweet.content}
-                    </p>
-                    <div className="flex items-center gap-2 mb-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleCopyTweet(tweet.content)}
-                        className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 h-7 px-3 text-xs bg-electric-muted border border-electric-border text-electric-text hover:bg-electric-border"
-                      >
-                        📋 Copy Tweet
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="electric-body text-electric-text mb-3 whitespace-pre-wrap break-words font-medium">
-                      {hook}
-                    </p>
-                    <div className="flex items-center gap-2 mb-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleCopyTweet(tweet.content)}
-                        className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 h-7 px-3 text-xs bg-electric-muted border border-electric-border text-electric-text hover:bg-electric-border"
-                      >
-                        📋 Copy Full Tweet
-                      </button>
-                      <button
-                        onClick={() => {
-                          setViewMode('full');
-                          // Scroll to this tweet
-                          setTimeout(() => {
-                            const element = document.querySelector(`[data-tweet-index="${index}"]`);
-                            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }, 100);
-                        }}
-                        className="inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 h-7 px-3 text-xs bg-electric-lime text-black hover:bg-electric-lime/90"
-                      >
-                        👁️ View Full
-                      </button>
-                    </div>
-                  </>
+              {showFull ? (
+                <>
+                  <p className="text-foreground mb-3 whitespace-pre-wrap break-words text-xs leading-relaxed font-light">
+                    {tweet.content}
+                  </p>
+                  <div className="flex items-center gap-2 mb-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleCopyTweet(tweet.content)}
+                      className="text-xs h-7 px-2 flex items-center gap-1.5"
+                    >
+                      <CopyIcon className="w-3.5 h-3.5" />
+                      Copy
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-foreground mb-3 whitespace-pre-wrap break-words font-light text-xs leading-relaxed">
+                    {hook}
+                  </p>
+                  <div className="flex items-center gap-2 mb-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleCopyTweet(tweet.content)}
+                      className="text-xs h-7 px-2 flex items-center gap-1.5"
+                    >
+                      <CopyIcon className="w-3.5 h-3.5" />
+                      Copy Full
+                    </Button>
+                  </div>
+                </>
+              )}
+              
+              <div className="flex flex-wrap gap-4 text-[11px] text-muted-foreground font-light">
+                <span>Likes: {(tweet.likes || 0).toLocaleString()}</span>
+                <span>Retweets: {(tweet.retweets || 0).toLocaleString()}</span>
+                <span>Comments: {(tweet.comments || 0).toLocaleString()}</span>
+                {!showFull && (
+                  <span className="ml-auto font-light glass-accent">
+                    {totalEngagement.toLocaleString()} total
+                  </span>
                 )}
-                
-                <div className="flex flex-wrap gap-4 text-sm text-electric-text-muted">
-                  <div>
-                    <span className="electric-accent">❤️</span> {tweet.likes.toLocaleString()} likes
-                  </div>
-                  <div>
-                    <span className="electric-accent">🔄</span> {tweet.retweets.toLocaleString()} retweets
-                  </div>
-                  <div>
-                    <span className="electric-accent">💬</span> {tweet.comments.toLocaleString()} comments
-                  </div>
-                  {!showFull && (
-                    <div className="ml-auto font-medium text-electric-lime">
-                      {totalEngagement.toLocaleString()} total engagement
-                    </div>
-                  )}
-                  <div className={showFull ? "ml-auto" : ""}>
-                    <span className="text-xs">{new Date(tweet.date).toLocaleString()}</span>
-                  </div>
-                </div>
+                <span className={showFull ? "ml-auto" : ""}>
+                  {new Date(tweet.date).toLocaleDateString()}
+                </span>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-electric-lime/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
           );
         })}
@@ -135,4 +116,3 @@ export default function TweetList({ tweets }) {
     </div>
   );
 }
-

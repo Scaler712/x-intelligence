@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
+import Button from '../ui/Button';
+import { PauseIcon, PlayIcon, CloseIcon } from '../ui/Icons';
 
 export default function ProgressBar({
   current = 0,
@@ -17,7 +18,6 @@ export default function ProgressBar({
 
   const estimatedTimeRemaining = useMemo(() => {
     if (status !== 'scraping' || current === 0 || total === 0) return null;
-    // Rough estimate: ~0.5 seconds per tweet
     const remaining = total - current;
     const seconds = Math.round(remaining * 0.5);
     if (seconds < 60) return `~${seconds}s`;
@@ -28,48 +28,54 @@ export default function ProgressBar({
   if (status === 'idle') return null;
 
   return (
-    <div className="bg-electric-muted border border-electric-border rounded-xl p-4">
-      <div className="flex items-center justify-between mb-2">
+    <div className="glass-panel" style={{ padding: 'var(--space-5)' }}>
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
-          <span className="electric-body text-electric-text">
-            {status === 'scraping' && !isPaused && '⚡ Scraping...'}
-            {isPaused && '⏸️ Paused'}
-            {status === 'complete' && '✅ Complete'}
-            {status === 'error' && '❌ Error'}
+          <span style={{ color: 'var(--color-text)', fontSize: 'var(--text-xs)', fontWeight: 500 }}>
+            {status === 'scraping' && !isPaused && 'Analyzing...'}
+            {isPaused && 'Paused'}
+            {status === 'complete' && 'Complete'}
+            {status === 'error' && 'Error'}
           </span>
-          <span className="text-electric-text-muted text-sm">
+          <span style={{ color: 'var(--color-text-muted)', fontSize: 'var(--text-xs)' }}>
             {current} / {total > 0 ? total : '?'} tweets
             {percentage > 0 && ` (${percentage}%)`}
           </span>
           {estimatedTimeRemaining && (
-            <span className="text-electric-lime text-sm">{estimatedTimeRemaining} remaining</span>
+            <span style={{ color: 'var(--color-blue)', fontSize: 'var(--text-xs)' }}>{estimatedTimeRemaining} remaining</span>
           )}
         </div>
 
         {status === 'scraping' && (
           <div className="flex items-center gap-2">
             {isPaused ? (
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={onResume}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-light transition-all duration-200 bg-electric-lime text-black hover:bg-electric-lime/90"
               >
-                ▶️ Resume
-              </button>
+                <PlayIcon className="w-3.5 h-3.5" />
+                Resume
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={onPause}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-light transition-all duration-200 bg-electric-dark border border-electric-border text-electric-text hover:border-electric-lime"
               >
-                ⏸️ Pause
-              </button>
+                <PauseIcon className="w-3.5 h-3.5" />
+                Pause
+              </Button>
             )}
             {onCancel && (
-              <button
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={onCancel}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-light transition-all duration-200 bg-red-900/20 border border-red-500/50 text-red-400 hover:bg-red-900/30"
               >
-                ✕ Cancel
-              </button>
+                <CloseIcon className="w-3.5 h-3.5" />
+                Cancel
+              </Button>
             )}
           </div>
         )}
@@ -77,9 +83,9 @@ export default function ProgressBar({
 
       {/* Progress Bar */}
       {total > 0 && (
-        <div className="relative w-full h-2 bg-electric-border rounded-full overflow-hidden">
+        <div className="progress-bar">
           <div
-            className="absolute inset-y-0 left-0 bg-electric-lime transition-all duration-300 ease-out electric-glow"
+            className="progress-bar__fill"
             style={{ width: `${percentage}%` }}
           />
         </div>

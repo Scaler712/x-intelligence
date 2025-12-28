@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import '../../styles/electric.css';
+import FormField from '../ui/FormField';
+import Textarea from '../ui/Textarea';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
 
 export default function BatchScrapeForm({ onBatchStart, isProcessing }) {
   const [usernames, setUsernames] = useState('');
@@ -26,55 +29,60 @@ export default function BatchScrapeForm({ onBatchStart, isProcessing }) {
   };
 
   return (
-    <div className="bg-electric-muted border border-electric-border rounded-xl p-6">
-      <h2 className="electric-heading text-2xl text-electric-text mb-4">
-        Batch <span className="electric-accent">Scrape</span>
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold text-white">
+        Batch <span className="text-[#2563eb]">Analysis</span>
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm text-electric-text-muted mb-2">
-            Usernames (one per line)
-          </label>
-          <textarea
+        <FormField label="Usernames (one per line)">
+          <Textarea
+            rows={8}
             value={usernames}
             onChange={(e) => setUsernames(e.target.value)}
             placeholder="elonmusk&#10;naval&#10;pmarca"
-            className="w-full h-32 bg-electric-dark border border-electric-border rounded-lg px-4 py-3 text-electric-text placeholder-electric-text-muted focus:outline-none focus:border-electric-lime transition-colors font-mono text-sm"
+            className="font-mono text-sm"
             disabled={isProcessing}
           />
-        </div>
+        </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm text-electric-text-muted mb-2">Min Likes</label>
-            <input
+          <FormField label="Min Likes">
+            <Input
               type="number"
               value={filters.MIN_LIKES}
               onChange={(e) => setFilters(prev => ({ ...prev, MIN_LIKES: parseInt(e.target.value) || 0 }))}
-              className="w-full bg-electric-dark border border-electric-border rounded-lg px-3 py-2 text-electric-text focus:outline-none focus:border-electric-lime transition-colors"
               disabled={isProcessing}
             />
-          </div>
-          <div>
-            <label className="block text-sm text-electric-text-muted mb-2">Min Retweets</label>
-            <input
+          </FormField>
+          <FormField label="Min Retweets">
+            <Input
               type="number"
               value={filters.MIN_RETWEETS}
               onChange={(e) => setFilters(prev => ({ ...prev, MIN_RETWEETS: parseInt(e.target.value) || 0 }))}
-              className="w-full bg-electric-dark border border-electric-border rounded-lg px-3 py-2 text-electric-text focus:outline-none focus:border-electric-lime transition-colors"
               disabled={isProcessing}
             />
-          </div>
+          </FormField>
         </div>
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
           disabled={isProcessing}
-          className="w-full inline-flex items-center justify-center rounded-lg font-light transition-all duration-200 h-12 px-6 bg-electric-lime text-black hover:bg-electric-lime/90 electric-glow disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-12"
         >
-          {isProcessing ? '⏳ Processing...' : '🚀 Start Batch Scrape'}
-        </button>
+          {isProcessing ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </>
+          ) : (
+            '🚀 Start Batch Analysis'
+          )}
+        </Button>
       </form>
     </div>
   );

@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
 import { extractLinks, analyzeLinkPerformance } from '../../utils/linkAnalysis';
 
 export default function LinkAnalysis({ tweets }) {

@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
 import { detectCTAs } from '../../utils/contentAnalysis';
 
 export default function CTADetector({ tweets }) {

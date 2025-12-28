@@ -114,6 +114,7 @@ async function scrapeTimeline(config, filters, onProgress, pauseCheck) {
   } = config;
 
   const csvRows = [];
+  const tweets = []; // Store tweets for database persistence
   let cursor = "";
   let page = 0;
   let total = 0;
@@ -170,6 +171,16 @@ async function scrapeTimeline(config, filters, onProgress, pauseCheck) {
         seenTweets.add(tweetKey); // Mark as seen
         const csvRow = rowToCsv(tweet);
         csvRows.push(csvRow);
+        
+        // Store tweet data for database persistence
+        tweets.push({
+          content: tweetContent,
+          comments: tweet.replies ?? 0,
+          likes: tweet.favorites ?? 0,
+          retweets: tweet.retweets ?? 0,
+          date: tweetDate
+        });
+        
         total += 1;
         
         // Emit progress via callback
@@ -231,7 +242,8 @@ async function scrapeTimeline(config, filters, onProgress, pauseCheck) {
     total,
     filtered,
     filename: path.basename(outputPath),
-    path: outputPath
+    path: outputPath,
+    tweets: tweets // Include tweets array for database persistence
   };
 }
 

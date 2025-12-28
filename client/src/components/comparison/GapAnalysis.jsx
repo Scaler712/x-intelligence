@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
 import { compareScrapes } from '../../utils/comparison';
 
 export default function GapAnalysis({ scrapes }) {

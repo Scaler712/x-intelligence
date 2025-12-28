@@ -65,6 +65,27 @@ export async function saveScrape(scrapeData) {
   const db = await initDB();
   const scrapeId = scrapeData.id || Date.now();
   
+  // Deduplicate tweets before saving
+  const uniqueTweets = new Map();
+  if (scrapeData.tweets && scrapeData.tweets.length > 0) {
+    scrapeData.tweets.forEach(tweet => {
+      const key = `${tweet.content}|${tweet.date || ''}`;
+      if (!uniqueTweets.has(key)) {
+        uniqueTweets.set(key, tweet);
+      } else {
+        // Keep the one with higher engagement if duplicate
+        const existing = uniqueTweets.get(key);
+        const existingEng = (existing.likes || 0) + (existing.retweets || 0) + (existing.comments || 0);
+        const newEng = (tweet.likes || 0) + (tweet.retweets || 0) + (tweet.comments || 0);
+        if (newEng > existingEng) {
+          uniqueTweets.set(key, tweet);
+        }
+      }
+    });
+  }
+  
+  const deduplicatedTweets = Array.from(uniqueTweets.values());
+  
   const tx = db.transaction(['scrapes', 'tweets'], 'readwrite');
   
   // Save metadata
@@ -72,17 +93,20 @@ export async function saveScrape(scrapeData) {
     id: scrapeId,
     username: scrapeData.username,
     date: scrapeData.date || new Date().toISOString(),
-    stats: scrapeData.stats || {},
+    stats: {
+      ...scrapeData.stats,
+      total: deduplicatedTweets.length // Update count
+    },
     filters: scrapeData.filters || {},
     csvFilename: scrapeData.csvFilename || null,
-    tweetCount: scrapeData.tweets?.length || 0
+    tweetCount: deduplicatedTweets.length
   });
   
   // Save tweets with scrape ID
-  if (scrapeData.tweets && scrapeData.tweets.length > 0) {
+  if (deduplicatedTweets.length > 0) {
     const tweetStore = tx.objectStore('tweets');
-    for (let i = 0; i < scrapeData.tweets.length; i++) {
-      const tweet = scrapeData.tweets[i];
+    for (let i = 0; i < deduplicatedTweets.length; i++) {
+      const tweet = deduplicatedTweets[i];
       await tweetStore.put({
         id: `${scrapeId}_${i}`,
         scrapeId: scrapeId,
@@ -119,8 +143,25 @@ export async function loadScrape(scrapeId) {
   const index = tweetStore.index('scrapeId');
   const tweets = await index.getAll(scrapeId);
   
+  // Deduplicate tweets by content + date
+  const uniqueTweets = new Map();
+  tweets.forEach(tweet => {
+    const key = `${tweet.content}|${tweet.date || ''}`;
+    if (!uniqueTweets.has(key)) {
+      uniqueTweets.set(key, tweet);
+    } else {
+      // Keep the one with higher engagement if duplicate
+      const existing = uniqueTweets.get(key);
+      const existingEng = (existing.likes || 0) + (existing.retweets || 0) + (existing.comments || 0);
+      const newEng = (tweet.likes || 0) + (tweet.retweets || 0) + (tweet.comments || 0);
+      if (newEng > existingEng) {
+        uniqueTweets.set(key, tweet);
+      }
+    }
+  });
+  
   // Sort tweets by date if available
-  const sortedTweets = tweets.sort((a, b) => {
+  const sortedTweets = Array.from(uniqueTweets.values()).sort((a, b) => {
     if (a.date && b.date) {
       return new Date(a.date) - new Date(b.date);
     }

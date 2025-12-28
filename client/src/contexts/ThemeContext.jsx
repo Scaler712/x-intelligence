@@ -26,8 +26,16 @@ export function ThemeProvider({ children }) {
   // Apply theme to document root and save to localStorage
   useEffect(() => {
     if (!isLoading) {
-      document.documentElement.setAttribute('data-theme', theme);
+      const root = document.documentElement;
+      root.setAttribute('data-theme', theme);
+      root.classList.remove('no-transition');
       localStorage.setItem('theme', theme);
+      
+      // Force a reflow to ensure CSS variables update
+      void root.offsetHeight;
+    } else {
+      // Prevent flash of wrong theme on initial load
+      document.documentElement.classList.add('no-transition');
     }
   }, [theme, isLoading]);
 

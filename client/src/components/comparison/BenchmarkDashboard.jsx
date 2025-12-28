@@ -9,7 +9,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import '../../styles/electric.css';
 import { calculateBenchmarks } from '../../utils/comparison';
 import {
   CHART_COLORS,

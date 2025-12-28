@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../../styles/electric.css';
 import { analyzeEmojis } from '../../utils/emojiAnalysis';
 
 export default function EmojiAnalysis({ tweets }) {

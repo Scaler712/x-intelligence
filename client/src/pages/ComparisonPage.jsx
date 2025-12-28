@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useComparison } from '../contexts/ComparisonContext';
-import { getAllScrapes } from '../utils/storage';
-import '../styles/electric.css';
+import { getAllScrapes, loadScrape } from '../utils/storage';
+import PageHeader from '../components/layout/PageHeader';
+import Card from '../components/ui/Card';
 import ComparisonView from '../components/comparison/ComparisonView';
 import BenchmarkDashboard from '../components/comparison/BenchmarkDashboard';
 import GapAnalysis from '../components/comparison/GapAnalysis';
@@ -11,20 +12,67 @@ export default function ComparisonPage() {
   const [allScrapes, setAllScrapes] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [metric, setMetric] = useState('total');
+  const [loading, setLoading] = useState(true);
+  const [selectedScrapesWithTweets, setSelectedScrapesWithTweets] = useState([]);
   const { selectedScrapes, toggleScrape, clearSelection, isSelected, hasSelection } = useComparison();
+
+  // Create stable ID string for dependency
+  const selectedScrapeIds = useMemo(() => 
+    selectedScrapes.map(s => s.id).sort().join(','), 
+    [selectedScrapes]
+  );
 
   useEffect(() => {
     loadScrapes();
   }, []);
 
+  // Load tweets for selected scrapes when they change
+  useEffect(() => {
+    if (selectedScrapes.length > 0) {
+      loadTweetsForSelected();
+    } else {
+      setSelectedScrapesWithTweets([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedScrapeIds]);
+
   async function loadScrapes() {
-    const scrapes = await getAllScrapes();
-    setAllScrapes(scrapes);
+    try {
+      const scrapes = await getAllScrapes();
+      setAllScrapes(scrapes);
+    } catch (error) {
+      console.error('Error loading scrapes:', error);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const selectedScrapesWithTweets = useMemo(() => {
-    return selectedScrapes.filter(s => s.tweets && s.tweets.length > 0);
-  }, [selectedScrapes]);
+  async function loadTweetsForSelected() {
+    try {
+      // Load tweets for each selected scrape
+      const scrapesWithTweets = await Promise.all(
+        selectedScrapes.map(async (scrape) => {
+          // If scrape already has tweets, use it
+          if (scrape.tweets && scrape.tweets.length > 0) {
+            return scrape;
+          }
+          // Otherwise load from IndexedDB
+          try {
+            const fullScrape = await loadScrape(scrape.id);
+            return fullScrape || { ...scrape, tweets: [] };
+          } catch (error) {
+            console.error(`Error loading scrape ${scrape.id}:`, error);
+            return { ...scrape, tweets: [] };
+          }
+        })
+      );
+      // Keep all selected scrapes, even if they don't have tweets loaded yet
+      setSelectedScrapesWithTweets(scrapesWithTweets);
+    } catch (error) {
+      console.error('Error loading tweets for selected scrapes:', error);
+      setSelectedScrapesWithTweets([]);
+    }
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -33,168 +81,107 @@ export default function ComparisonPage() {
     { id: 'timeline', label: 'Timeline' },
   ];
 
-  const metrics = [
-    { id: 'total', label: 'Total Engagement' },
-    { id: 'likes', label: 'Likes' },
-    { id: 'retweets', label: 'Retweets' },
-    { id: 'comments', label: 'Comments' },
-  ];
+  if (loading) {
+    return (
+      <div>
+        <PageHeader
+          breadcrumbs={['Home', 'Compare']}
+          title="Compare Analyses"
+          subtitle="Compare multiple X profile analyses side by side"
+        />
+        <div className="px-8 pb-10">
+          <div className="py-12 text-center">
+            <p className="text-[#a0a0a0] font-light">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-electric-bg p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="electric-heading text-3xl text-electric-text mb-2">
-            Compare Profiles
-          </h1>
-          <p className="electric-body text-electric-text-muted">
-            Select multiple scrapes to compare performance metrics and identify gaps
-          </p>
-        </div>
+    <div>
+      <PageHeader
+        breadcrumbs={['Home', 'Compare']}
+        title="Compare Analyses"
+        subtitle="Compare multiple X profile analyses side by side"
+      />
 
-        {/* Scrape Selection */}
-        <div className="bg-electric-dark border border-electric-border rounded-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="electric-heading text-xl text-electric-text">
-              Select Scrapes to Compare
-            </h3>
-            {hasSelection && (
+      <div className="px-8 pb-10">
+        <div className="space-y-6">
+          {/* Tab Navigation */}
+          <div className="flex gap-2 border-b border-glass-border pb-2">
+            {tabs.map((tab) => (
               <button
-                onClick={clearSelection}
-                className="bg-electric-muted border border-electric-border hover:border-electric-lime text-electric-text px-4 py-2 rounded-lg transition-all"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  px-4 py-2 text-sm font-light transition-none border-b-2
+                  ${activeTab === tab.id
+                    ? 'border-ring glass-accent'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                  }
+                `}
               >
-                Clear Selection ({selectedScrapes.length})
+                {tab.label}
               </button>
-            )}
+            ))}
           </div>
 
-          {allScrapes.length === 0 ? (
-            <p className="electric-body text-electric-text-muted">
-              No scrapes available. Go to the Scraper page to collect some data first.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {allScrapes.map(scrape => (
-                <div
-                  key={scrape.id}
-                  onClick={() => toggleScrape(scrape)}
-                  className={`
-                    p-4 rounded-lg border cursor-pointer transition-all
-                    ${isSelected(scrape.id)
-                      ? 'bg-electric-lime/10 border-electric-lime'
-                      : 'bg-electric-muted border-electric-border hover:border-electric-lime/50'
-                    }
-                  `}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="electric-body text-electric-text font-medium mb-1">
-                        {scrape.username}
-                      </div>
-                      <div className="text-sm text-electric-text-muted">
-                        {scrape.tweets?.length || 0} tweets
-                      </div>
-                      <div className="text-xs text-electric-text-muted">
-                        {new Date(scrape.date).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="ml-2">
-                      {isSelected(scrape.id) && (
-                        <span className="text-electric-lime text-xl">✓</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Comparison Results */}
-        {hasSelection && (
-          <>
-            {/* Tabs */}
-            <div className="bg-electric-dark border border-electric-border rounded-xl p-2 mb-6">
-              <div className="flex gap-2">
-                {tabs.map(tab => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      flex-1 px-4 py-2 rounded-lg transition-all electric-body
-                      ${activeTab === tab.id
-                        ? 'bg-electric-lime text-electric-dark font-medium'
-                        : 'text-electric-text-muted hover:text-electric-text hover:bg-electric-muted'
-                      }
-                    `}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Metric Selector for Timeline Tab */}
-            {activeTab === 'timeline' && (
-              <div className="bg-electric-dark border border-electric-border rounded-xl p-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="electric-body text-electric-text-muted">Metric:</span>
-                  {metrics.map(m => (
-                    <button
-                      key={m.id}
-                      onClick={() => setMetric(m.id)}
-                      className={`
-                        px-3 py-1.5 rounded-lg transition-all text-sm
-                        ${metric === m.id
-                          ? 'bg-electric-lime text-electric-dark font-medium'
-                          : 'text-electric-text-muted hover:text-electric-text hover:bg-electric-muted'
-                        }
-                      `}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Content */}
+          <div>
+            {activeTab === 'overview' && (
+              <ComparisonView
+                scrapes={allScrapes || []}
+                selectedScrapes={selectedScrapes.length > 0 ? (selectedScrapesWithTweets.length > 0 ? selectedScrapesWithTweets : selectedScrapes) : []}
+                toggleScrape={toggleScrape}
+                isSelected={isSelected}
+                clearSelection={clearSelection}
+              />
             )}
-
-            {/* Tab Content */}
-            <div>
-              {activeTab === 'overview' && (
-                <ComparisonView scrapes={selectedScrapesWithTweets} />
-              )}
-
-              {activeTab === 'benchmarks' && (
+            {activeTab === 'benchmarks' && (
+              selectedScrapesWithTweets.length > 0 ? (
                 <BenchmarkDashboard scrapes={selectedScrapesWithTweets} />
-              )}
-
-              {activeTab === 'gaps' && (
+              ) : (
+                <div className="py-12 text-center">
+                  <p className="text-muted-foreground font-light">
+                    {selectedScrapes.length > 0 
+                      ? 'Loading tweets for selected scrapes...'
+                      : 'Select scrapes to view benchmarks.'
+                    }
+                  </p>
+                </div>
+              )
+            )}
+            {activeTab === 'gaps' && (
+              selectedScrapesWithTweets.length > 0 ? (
                 <GapAnalysis scrapes={selectedScrapesWithTweets} />
-              )}
-
-              {activeTab === 'timeline' && (
-                <TimelineComparison
-                  scrapes={selectedScrapesWithTweets}
-                  metric={metric}
-                />
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Empty State */}
-        {!hasSelection && (
-          <div className="bg-electric-dark border border-electric-border rounded-xl p-12 text-center">
-            <div className="text-6xl mb-4">📊</div>
-            <h3 className="electric-heading text-xl text-electric-text mb-2">
-              No Scrapes Selected
-            </h3>
-            <p className="electric-body text-electric-text-muted max-w-md mx-auto">
-              Select at least one scrape above to start comparing profiles and analyzing performance gaps.
-            </p>
+              ) : (
+                <div className="py-12 text-center">
+                  <p className="text-muted-foreground font-light">
+                    {selectedScrapes.length > 0 
+                      ? 'Loading tweets for selected scrapes...'
+                      : 'Select scrapes to view gap analysis.'
+                    }
+                  </p>
+                </div>
+              )
+            )}
+            {activeTab === 'timeline' && (
+              selectedScrapesWithTweets.length > 0 ? (
+                <TimelineComparison scrapes={selectedScrapesWithTweets} metric={metric} />
+              ) : (
+                <div className="py-12 text-center">
+                  <p className="text-muted-foreground font-light">
+                    {selectedScrapes.length > 0 
+                      ? 'Loading tweets for selected scrapes...'
+                      : 'Select scrapes to view timeline comparison.'
+                    }
+                  </p>
+                </div>
+              )
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

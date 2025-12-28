@@ -9,7 +9,6 @@ import {
   ResponsiveContainer,
   ZAxis,
 } from 'recharts';
-import '../../styles/electric.css';
 import {
   CHART_COLORS,
   CHART_STYLES,

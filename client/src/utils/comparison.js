@@ -21,28 +21,62 @@ export function compareScrapes(scrapes) {
 
   // Calculate metrics for each scrape
   const metrics = scrapes.map(scrape => {
-    const stats = calculateEngagementStats(scrape.tweets);
+    // Handle missing tweets
+    const tweets = scrape.tweets || [];
+    if (tweets.length === 0) {
+      return {
+        id: scrape.id,
+        username: scrape.username,
+        tweetCount: 0,
+        avgLikes: 0,
+        avgRetweets: 0,
+        avgComments: 0,
+        avgEngagement: 0,
+        totalLikes: 0,
+        totalRetweets: 0,
+        totalComments: 0,
+        totalEngagement: 0,
+        bestTweet: null,
+        bestTime: null,
+      };
+    }
+    
+    const stats = calculateEngagementStats(tweets);
+    const totalLikes = tweets.reduce((sum, t) => sum + (t.likes || 0), 0);
+    const totalRetweets = tweets.reduce((sum, t) => sum + (t.retweets || 0), 0);
+    const totalComments = tweets.reduce((sum, t) => sum + (t.comments || 0), 0);
+    
     return {
       id: scrape.id,
       username: scrape.username,
-      tweetCount: scrape.tweets.length,
-      avgLikes: stats.avgLikes,
-      avgRetweets: stats.avgRetweets,
-      avgComments: stats.avgComments,
-      avgEngagement: stats.avgEngagement,
-      totalLikes: stats.totalLikes,
-      totalRetweets: stats.totalRetweets,
-      totalComments: stats.totalComments,
-      totalEngagement: stats.totalEngagement,
-      bestTweet: findBestTweet(scrape.tweets),
-      bestTime: findBestPostingTime(scrape.tweets),
+      tweetCount: tweets.length,
+      avgLikes: stats.avgLikes || 0,
+      avgRetweets: stats.avgRetweets || 0,
+      avgComments: stats.avgComments || 0,
+      avgEngagement: stats.avgTotalEngagement || 0,
+      totalLikes: totalLikes,
+      totalRetweets: totalRetweets,
+      totalComments: totalComments,
+      totalEngagement: stats.totalEngagement || 0,
+      bestTweet: findBestTweet(tweets),
+      bestTime: findBestPostingTime(tweets),
     };
   });
 
-  // Find best performer
-  const bestPerformer = metrics.reduce((best, current) =>
+  // Find best performer (only from metrics with tweets)
+  const metricsWithTweets = metrics.filter(m => m.tweetCount > 0);
+  if (metricsWithTweets.length === 0) {
+    return {
+      metrics: [],
+      bestPerformer: null,
+      gaps: [],
+      commonPatterns: [],
+    };
+  }
+  
+  const bestPerformer = metricsWithTweets.reduce((best, current) =>
     current.avgEngagement > best.avgEngagement ? current : best
-  , metrics[0]);
+  , metricsWithTweets[0]);
 
   // Identify performance gaps
   const gaps = identifyGaps(metrics, bestPerformer);

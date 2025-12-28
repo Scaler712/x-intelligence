@@ -1,4 +1,3 @@
-import '../../styles/electric.css';
 
 export default function QuickFilters({ filters, onFilterChange }) {
   const toggles = [

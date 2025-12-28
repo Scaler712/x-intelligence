@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import '../styles/electric.css';
 import { analyzePostingSchedule } from '../utils/analytics';
 
 export default function ScheduleHeatmap({ tweets }) {
