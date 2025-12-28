@@ -380,8 +380,9 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = config.PORT;
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const PORT = config.PORT || process.env.PORT || 3001;
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`API routes available at http://0.0.0.0:${PORT}/api`);
 });
 
