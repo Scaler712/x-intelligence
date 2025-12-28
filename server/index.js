@@ -49,15 +49,15 @@ app.options('*', cors());
 app.use(express.json({ limit: '50mb' })); // Increase limit for export requests
 app.use(express.urlencoded({ extended: true })); // Support URL-encoded bodies
 
-// Serve static files from downloads directory
-app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
-
-// Mount routes
+// Mount API routes FIRST (before static file serving)
 app.use("/api/auth", authRoutes);
 app.use("/api/storage", storageRoutes);
 app.use("/api/api-keys", apiKeysRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/export", exportRoutes);
+
+// Serve static files from downloads directory (after API routes)
+app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
 
 // Serve static files from downloads directory (after API routes)
 app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
