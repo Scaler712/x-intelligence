@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import PageHeader from '../components/layout/PageHeader';
 import FormField from '../components/ui/FormField';
 import Input from '../components/ui/Input';
@@ -34,6 +35,7 @@ const SOCKET_URL = getApiUrl();
 
 export default function ScraperPage() {
   const [searchParams] = useSearchParams();
+  const { session } = useAuth();
   const [socket, setSocket] = useState(null);
   const [username, setUsername] = useState(searchParams.get('username') || '');
   const [filters, setFilters] = useState({
@@ -91,8 +93,23 @@ export default function ScraperPage() {
       return;
     }
 
+    // Get access token for authentication
+    const accessToken = session?.access_token;
+    
+    if (!accessToken) {
+      setError('Not authenticated. Please log in to use this feature.');
+      setStatus('error');
+      return;
+    }
+
     const newSocket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
+      auth: {
+        token: accessToken
+      },
+      extraHeaders: {
+        Authorization: `Bearer ${accessToken}`
+      }
     });
 
     newSocket.on('connect', () => {
@@ -186,7 +203,7 @@ export default function ScraperPage() {
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [session?.access_token]); // Reconnect when session changes
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
