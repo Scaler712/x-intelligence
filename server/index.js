@@ -38,11 +38,16 @@ app.use(cors({
     callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type']
 }));
 
+// Handle OPTIONS preflight requests explicitly
+app.options('*', cors());
+
 app.use(express.json({ limit: '50mb' })); // Increase limit for export requests
+app.use(express.urlencoded({ extended: true })); // Support URL-encoded bodies
 
 // Serve static files from downloads directory
 app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
@@ -53,6 +58,9 @@ app.use("/api/storage", storageRoutes);
 app.use("/api/api-keys", apiKeysRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/export", exportRoutes);
+
+// Serve static files from downloads directory (after API routes)
+app.use("/api/download", express.static(path.join(__dirname, "../downloads")));
 
 // Download endpoint
 app.get("/api/download/:filename", (req, res) => {
