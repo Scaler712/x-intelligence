@@ -3,11 +3,19 @@
  */
 // Get API URL, ensuring we don't use internal Railway URLs
 const getApiUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
+  let envUrl = import.meta.env.VITE_API_URL;
   // Don't use internal Railway URLs (browsers can't access them)
   if (envUrl && envUrl.includes('railway.internal')) {
     console.warn('VITE_API_URL contains internal Railway URL. Please use the public Railway URL instead.');
     return '';
+  }
+  // Remove trailing slash and any /api path (we add it in the fetch calls)
+  if (envUrl) {
+    envUrl = envUrl.trim();
+    // Remove trailing slash
+    envUrl = envUrl.replace(/\/+$/, '');
+    // Remove /api if it's at the end (common mistake)
+    envUrl = envUrl.replace(/\/api\/?$/, '');
   }
   return envUrl || (import.meta.env.DEV ? 'http://localhost:3001' : '');
 };
