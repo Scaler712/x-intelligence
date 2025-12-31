@@ -3,6 +3,7 @@ import FormField from '../ui/FormField';
 import Textarea from '../ui/Textarea';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import QuickFilters from '../filters/QuickFilters';
 
 export default function BatchScrapeForm({ onBatchStart, isProcessing }) {
   const [usernames, setUsernames] = useState('');
@@ -10,7 +11,11 @@ export default function BatchScrapeForm({ onBatchStart, isProcessing }) {
     MIN_LIKES: 0,
     MIN_RETWEETS: 0,
     MIN_COMMENTS: 0,
-    MIN_TOTAL_ENGAGEMENT: 0
+    MIN_TOTAL_ENGAGEMENT: 0,
+    excludeRetweets: false,
+    excludeReplies: false,
+    mediaOnly: false,
+    dateRange: { start: null, end: null }
   });
 
   const handleSubmit = (e) => {
@@ -26,6 +31,17 @@ export default function BatchScrapeForm({ onBatchStart, isProcessing }) {
     }
 
     onBatchStart(usernameList, filters);
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleDateRangeChange = (start, end) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      dateRange: { start, end } 
+    }));
   };
 
   return (
@@ -46,20 +62,72 @@ export default function BatchScrapeForm({ onBatchStart, isProcessing }) {
           />
         </FormField>
 
+        {/* Quick Filters */}
+        <div>
+          <label className="block text-sm font-medium text-white mb-2">
+            Quick Filters
+          </label>
+          <QuickFilters 
+            filters={filters} 
+            onFilterChange={handleFilterChange}
+          />
+        </div>
+
+        {/* Engagement Filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Min Likes">
             <Input
               type="number"
+              min="0"
               value={filters.MIN_LIKES}
-              onChange={(e) => setFilters(prev => ({ ...prev, MIN_LIKES: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => handleFilterChange('MIN_LIKES', parseInt(e.target.value) || 0)}
               disabled={isProcessing}
             />
           </FormField>
           <FormField label="Min Retweets">
             <Input
               type="number"
+              min="0"
               value={filters.MIN_RETWEETS}
-              onChange={(e) => setFilters(prev => ({ ...prev, MIN_RETWEETS: parseInt(e.target.value) || 0 }))}
+              onChange={(e) => handleFilterChange('MIN_RETWEETS', parseInt(e.target.value) || 0)}
+              disabled={isProcessing}
+            />
+          </FormField>
+          <FormField label="Min Comments">
+            <Input
+              type="number"
+              min="0"
+              value={filters.MIN_COMMENTS}
+              onChange={(e) => handleFilterChange('MIN_COMMENTS', parseInt(e.target.value) || 0)}
+              disabled={isProcessing}
+            />
+          </FormField>
+          <FormField label="Min Total Engagement">
+            <Input
+              type="number"
+              min="0"
+              value={filters.MIN_TOTAL_ENGAGEMENT}
+              onChange={(e) => handleFilterChange('MIN_TOTAL_ENGAGEMENT', parseInt(e.target.value) || 0)}
+              disabled={isProcessing}
+            />
+          </FormField>
+        </div>
+
+        {/* Date Range */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField label="Start Date (optional)">
+            <Input
+              type="date"
+              value={filters.dateRange.start || ''}
+              onChange={(e) => handleDateRangeChange(e.target.value || null, filters.dateRange.end)}
+              disabled={isProcessing}
+            />
+          </FormField>
+          <FormField label="End Date (optional)">
+            <Input
+              type="date"
+              value={filters.dateRange.end || ''}
+              onChange={(e) => handleDateRangeChange(filters.dateRange.start, e.target.value || null)}
               disabled={isProcessing}
             />
           </FormField>

@@ -13,6 +13,7 @@ const apiKeysRoutes = require("./routes/apiKeys");
 const aiRoutes = require("./routes/ai");
 const { supabaseAdmin } = require("./services/supabaseClient");
 const storageService = require("./services/storageService");
+const jobQueue = require("./services/jobQueue");
 
 const app = express();
 const server = http.createServer(app);
@@ -79,6 +80,181 @@ app.get("/api/download/:filename", (req, res) => {
 // Health check endpoint
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+// Scrapes API routes (for History page and viewing scrapes)
+app.get("/api/scrapes", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error("Auth error in /api/scrapes:", authError);
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    console.log(`Fetching scrapes for user ${user.id}`);
+
+    const { data: scrapes, error } = await supabaseAdmin
+      .from("scrapes")
+      .select("id, username, stats, filters, csv_filename, created_at, status, error_message")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error("Error fetching scrapes:", error);
+      throw error;
+    }
+
+    console.log(`Found ${scrapes?.length || 0} scrapes for user ${user.id}`);
+
+    res.json({ scrapes: scrapes || [] });
+  } catch (error) {
+    console.error("Get scrapes error:", error);
+    res.status(500).json({ error: "Failed to get scrapes", details: error.message });
+  }
+});
+
+// Background job API routes - MUST come before /api/scrapes/:id to avoid route conflicts
+app.post("/api/scrapes/create-job", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { username, filters, apiKey } = req.body;
+    
+    if (!username) {
+      return res.status(400).json({ error: "Username is required" });
+    }
+
+    const scraperApiKey = (apiKey && apiKey.trim() !== "") ? apiKey.trim() : 
+                         (config.SCRAPER_KEY && config.SCRAPER_KEY.trim() !== "") ? config.SCRAPER_KEY.trim() : null;
+    
+    if (!scraperApiKey) {
+      return res.status(400).json({ 
+        error: "Scraper API key is required. Please configure it in Settings or set SCRAPER_KEY in your .env file."
+      });
+    }
+
+    const scrapeId = await jobQueue.createScrapeJob(user.id, username, filters || {}, scraperApiKey);
+    
+    res.json({ scrapeId, status: "pending" });
+  } catch (error) {
+    console.error("Error creating job:", error);
+    res.status(500).json({ error: error.message || "Failed to create job" });
+  }
+});
+
+// Status route MUST come before /api/scrapes/:id (more specific route first)
+app.get("/api/scrapes/:id/status", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { id } = req.params;
+    const status = await jobQueue.getJobStatus(id, user.id);
+    
+    res.json(status);
+  } catch (error) {
+    console.error("Error getting job status:", error);
+    if (error.code === "PGRST116") {
+      return res.status(404).json({ error: "Job not found" });
+    }
+    res.status(500).json({ error: error.message || "Failed to get job status" });
+  }
+});
+
+// Get single scrape - MUST come after /api/scrapes/:id/status
+app.get("/api/scrapes/:id", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error("Auth error:", authError);
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { id } = req.params;
+    console.log(`Fetching scrape ${id} for user ${user.id}`);
+
+    // Get scrape metadata
+    const { data: scrape, error: scrapeError } = await supabaseAdmin
+      .from("scrapes")
+      .select("id, username, stats, filters, csv_filename, created_at, status, error_message")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (scrapeError) {
+      console.error("Scrape query error:", scrapeError);
+      // Check if it's a "not found" error
+      if (scrapeError.code === 'PGRST116') {
+        return res.status(404).json({ error: "Scrape not found" });
+      }
+      return res.status(500).json({ error: "Database error", details: scrapeError.message });
+    }
+
+    if (!scrape) {
+      console.error(`Scrape ${id} not found for user ${user.id}`);
+      return res.status(404).json({ error: "Scrape not found" });
+    }
+
+    console.log(`Found scrape ${id}, loading tweets...`);
+
+    // Get tweets
+    const { data: tweets, error: tweetsError } = await supabaseAdmin
+      .from("tweets")
+      .select("content, likes, retweets, comments, date")
+      .eq("scrape_id", id)
+      .order("date", { ascending: true });
+
+    if (tweetsError) {
+      console.error("Error loading tweets:", tweetsError);
+    }
+
+    console.log(`Loaded ${tweets?.length || 0} tweets for scrape ${id}`);
+
+    res.json({
+      scrape: {
+        ...scrape,
+        tweets: tweets || [],
+        date: scrape.created_at
+      }
+    });
+  } catch (error) {
+    console.error("Get scrape error:", error);
+    res.status(500).json({ error: "Failed to get scrape", details: error.message });
+  }
 });
 
 // Store pause state and user association per socket

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { loadScrape, deleteScrape } from '../utils/storage';
 import PageHeader from '../components/layout/PageHeader';
 import Card from '../components/ui/Card';
@@ -10,9 +11,21 @@ import TabNavigation from '../components/TabNavigation';
 import StatsSidebar from '../components/StatsSidebar';
 import AnalysisDashboard from '../components/AnalysisDashboard';
 
+// Get API URL
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl.includes('railway.internal')) {
+    return '';
+  }
+  return envUrl || (import.meta.env.DEV ? 'http://localhost:3001' : '');
+};
+
+const API_URL = getApiUrl();
+
 export default function ScrapeDetailsPage() {
   const { scrapeId } = useParams();
   const navigate = useNavigate();
+  const { session, getAccessToken } = useAuth();
   const [scrape, setScrape] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tweets');
@@ -20,17 +33,79 @@ export default function ScrapeDetailsPage() {
 
   useEffect(() => {
     loadScrapeData();
-  }, [scrapeId]);
+  }, [scrapeId, session]);
 
   const loadScrapeData = async () => {
     try {
       setLoading(true);
-      const scrapeData = await loadScrape(Number(scrapeId));
-      if (!scrapeData) {
-        setError('Analysis not found');
-        return;
+      setError(null);
+      
+      // Check if scrapeId is UUID (database) or number (IndexedDB)
+      const isUUID = typeof scrapeId === 'string' && scrapeId.includes('-');
+      
+      if (isUUID && session?.access_token && API_URL) {
+        // Load from database
+        try {
+          const token = getAccessToken();
+          if (!token) {
+            throw new Error('No access token');
+          }
+          
+          console.log(`Loading scrape ${scrapeId} from database...`);
+          const response = await fetch(`${API_URL}/api/scrapes/${scrapeId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`Loaded scrape with ${data.scrape?.tweets?.length || 0} tweets, status: ${data.scrape?.status}`);
+            
+            // Check if scrape is still processing
+            if (data.scrape?.status === 'pending' || data.scrape?.status === 'running') {
+              setError(`Analysis is still ${data.scrape.status}. Please wait for it to complete. You can check back later.`);
+              setScrape(data.scrape); // Still show what we have
+              return;
+            }
+            
+            if (data.scrape?.status === 'failed') {
+              setError(`Analysis failed: ${data.scrape.error_message || 'Unknown error'}`);
+              setScrape(data.scrape);
+              return;
+            }
+            
+            setScrape(data.scrape);
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error(`Failed to load scrape: ${response.status}`, errorData);
+            if (response.status === 404) {
+              setError('Analysis not found. It may still be processing or may have been deleted.');
+            } else {
+              setError(`Failed to load analysis: ${errorData.error || 'Unknown error'}`);
+            }
+            return;
+          }
+        } catch (error) {
+          console.error('Error loading from database:', error);
+          setError(`Failed to load analysis: ${error.message || 'Network error'}`);
+          return;
+        }
       }
-      setScrape(scrapeData);
+      
+      // Fallback to IndexedDB (for numeric IDs)
+      try {
+        const scrapeData = await loadScrape(Number(scrapeId));
+        if (!scrapeData) {
+          setError('Analysis not found');
+          return;
+        }
+        setScrape(scrapeData);
+      } catch (err) {
+        console.error('Error loading from IndexedDB:', err);
+        setError('Failed to load analysis');
+      }
     } catch (err) {
       console.error('Error loading analysis:', err);
       setError('Failed to load analysis');
@@ -42,11 +117,34 @@ export default function ScrapeDetailsPage() {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this analysis? This cannot be undone.')) {
       try {
+        // Check if it's a database scrape
+        const isUUID = typeof scrapeId === 'string' && scrapeId.includes('-');
+        
+        if (isUUID && session?.access_token && API_URL) {
+          // Delete from database
+          const token = getAccessToken();
+          const response = await fetch(`${API_URL}/api/scrapes/${scrapeId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            navigate('/history');
+            return;
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to delete');
+          }
+        }
+        
+        // Fallback to IndexedDB delete
         await deleteScrape(Number(scrapeId));
         navigate('/history');
       } catch (err) {
         console.error('Error deleting analysis:', err);
-        alert('Failed to delete analysis');
+        alert('Failed to delete analysis: ' + (err.message || 'Unknown error'));
       }
     }
   };
@@ -99,7 +197,7 @@ export default function ScrapeDetailsPage() {
       <PageHeader
         breadcrumbs={['Home', 'History', `@${scrape.username}`]}
         title={`@${scrape.username}`}
-        subtitle={`Analyzed on ${new Date(scrape.date).toLocaleString()}`}
+        subtitle={`Analyzed on ${new Date(scrape.date || scrape.created_at).toLocaleString()}`}
       />
 
       <div className="px-8 pb-10">

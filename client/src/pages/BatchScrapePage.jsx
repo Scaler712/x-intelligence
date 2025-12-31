@@ -1,11 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
 import PageHeader from '../components/layout/PageHeader';
-import Card from '../components/ui/Card';
 import BatchScrapeForm from '../components/scraping/BatchScrapeForm';
 import ScrapeQueue from '../components/scraping/ScrapeQueue';
-import { saveScrape } from '../utils/storage';
 
 // Get API URL
 const getApiUrl = () => {
@@ -21,189 +18,218 @@ const SOCKET_URL = getApiUrl();
 
 export default function BatchScrapePage() {
   const { session } = useAuth();
-  const [socket, setSocket] = useState(null);
   const [queue, setQueue] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(-1);
-  const queueRef = useRef([]);
-  const currentIndexRef = useRef(-1);
+  const pollIntervalRef = useRef(null);
 
-  // Keep refs in sync
+  // Cleanup polling on unmount
   useEffect(() => {
-    queueRef.current = queue;
-  }, [queue]);
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
-  useEffect(() => {
-    currentIndexRef.current = currentIndex;
-  }, [currentIndex]);
+  const startPolling = (scrapeIds) => {
+    // Clear any existing polling
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
 
-  // Setup socket connection
-  useEffect(() => {
-    if (!SOCKET_URL || SOCKET_URL.includes('railway.internal')) {
+    if (scrapeIds.length === 0) {
+      setIsProcessing(false);
       return;
     }
 
     const accessToken = session?.access_token;
     if (!accessToken) {
-      return;
-    }
-
-    const newSocket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
-      auth: {
-        token: accessToken
-      },
-      extraHeaders: {
-        Authorization: `Bearer ${accessToken}`
-      }
-    });
-
-    newSocket.on('connect', () => {
-      console.log('Batch socket connected');
-    });
-
-    newSocket.on('scrape:started', (data) => {
-      console.log('Scrape started:', data);
-      const idx = currentIndexRef.current;
-      if (idx >= 0 && idx < queueRef.current.length) {
-        setQueue(prev => prev.map((item, i) => 
-          i === idx ? { ...item, status: 'running', filename: data.filename } : item
-        ));
-      }
-    });
-
-    newSocket.on('scrape:progress', (data) => {
-      const idx = currentIndexRef.current;
-      if (idx >= 0 && idx < queueRef.current.length) {
-        setQueue(prev => prev.map((item, i) => 
-          i === idx ? { 
-            ...item, 
-            tweetCount: data.stats?.total || 0,
-            progress: data.progress || 0
-          } : item
-        ));
-      }
-    });
-
-    newSocket.on('scrape:complete', async (data) => {
-      console.log('Scrape complete:', data);
-      const idx = currentIndexRef.current;
-      if (idx >= 0 && idx < queueRef.current.length) {
-        setQueue(prev => prev.map((item, i) => 
-          i === idx ? { 
-            ...item, 
-            status: 'completed',
-            tweetCount: data.total || 0,
-            scrapeId: data.scrapeId
-          } : item
-        ));
-
-        // Save to IndexedDB
-        try {
-          await saveScrape({
-            id: Date.now() + idx,
-            username: queueRef.current[idx].username,
-            date: new Date().toISOString(),
-            stats: {
-              total: data.total || 0,
-              filtered: data.filtered || 0
-            },
-            filters: queueRef.current[idx].filters,
-            csvFilename: data.filename,
-            tweets: [] // Tweets are stored in database, not IndexedDB for batch
-          });
-        } catch (error) {
-          console.error('Error saving scrape:', error);
-        }
-
-        // Process next item
-        processNext();
-      }
-    });
-
-    newSocket.on('scrape:error', (data) => {
-      console.error('Scrape error:', data);
-      const idx = currentIndexRef.current;
-      if (idx >= 0 && idx < queueRef.current.length) {
-        setQueue(prev => prev.map((item, i) => 
-          i === idx ? { 
-            ...item, 
-            status: 'failed',
-            error: data.message || 'Unknown error'
-          } : item
-        ));
-        // Continue with next item even on error
-        processNext();
-      }
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      newSocket.close();
-    };
-  }, [session?.access_token]);
-
-  const processNext = () => {
-    const nextIndex = currentIndexRef.current + 1;
-    if (nextIndex < queueRef.current.length) {
-      setCurrentIndex(nextIndex);
-      startScrape(nextIndex);
-    } else {
-      // All done
       setIsProcessing(false);
-      setCurrentIndex(-1);
-    }
-  };
-
-  const startScrape = (index) => {
-    if (!socket || !socket.connected) {
-      setQueue(prev => prev.map((item, i) => 
-        i === index ? { ...item, status: 'failed', error: 'Not connected' } : item
-      ));
-      processNext();
       return;
     }
 
-    const item = queueRef.current[index];
-    if (!item) return;
+    pollIntervalRef.current = setInterval(async () => {
+      const currentAccessToken = session?.access_token;
+      if (!currentAccessToken) {
+        clearInterval(pollIntervalRef.current);
+        setIsProcessing(false);
+        return;
+      }
 
-    const scraperApiKey = localStorage.getItem('scraperApiKey');
-    
-    socket.emit('scrape:start', {
-      username: item.username.trim(),
-      filters: item.filters,
-      apiKey: scraperApiKey || undefined,
-    });
+      try {
+        const statuses = await Promise.all(
+          scrapeIds.map(async (scrapeId) => {
+            try {
+              const response = await fetch(`${SOCKET_URL}/api/scrapes/${scrapeId}/status`, {
+                headers: {
+                  'Authorization': `Bearer ${currentAccessToken}`
+                }
+              });
+              
+              if (response.ok) {
+                return await response.json();
+              } else if (response.status === 404) {
+                return { id: scrapeId, status: 'failed', error_message: 'Job not found' };
+              }
+            } catch (error) {
+              console.error('Error polling status:', error);
+            }
+            return null;
+          })
+        );
+
+        // Update queue with statuses
+        setQueue(prev => prev.map(item => {
+          const status = statuses.find(s => s && s.id === item.scrapeId);
+          if (!status) return item;
+
+          return {
+            ...item,
+            status: status.status,
+            tweetCount: status.stats?.total || 0,
+            error: status.error_message
+          };
+        }));
+
+        // Check if all jobs are done
+        const allDone = statuses.every(s => 
+          !s || s.status === 'completed' || s.status === 'failed'
+        );
+
+        if (allDone) {
+          clearInterval(pollIntervalRef.current);
+          setIsProcessing(false);
+        }
+      } catch (error) {
+        console.error('Error in polling:', error);
+      }
+    }, 3000); // Poll every 3 seconds
   };
 
-  const handleBatchStart = (usernames, filters) => {
+  const handleBatchStart = async (usernames, filters) => {
     if (usernames.length === 0) {
       alert('Please enter at least one username');
       return;
     }
 
-    const newQueue = usernames.map((username, index) => ({
-      id: Date.now() + index,
-      username: username.trim(),
-      filters,
-      status: 'pending',
-      tweetCount: 0,
-      progress: 0,
-    }));
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      alert('Please log in to use batch analysis');
+      return;
+    }
+
+    const scraperApiKey = localStorage.getItem('scraperApiKey');
+
+    setIsProcessing(true);
+
+    // Create jobs for all usernames
+    const newQueue = await Promise.all(
+      usernames.map(async (username, index) => {
+        try {
+          const response = await fetch(`${SOCKET_URL}/api/scrapes/create-job`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+              username: username.trim(),
+              filters,
+              apiKey: scraperApiKey || undefined
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to create job');
+          }
+
+          const { scrapeId } = await response.json();
+          
+          return {
+            id: Date.now() + index,
+            username: username.trim(),
+            filters,
+            status: 'pending',
+            tweetCount: 0,
+            scrapeId
+          };
+        } catch (error) {
+          console.error(`Error creating job for ${username}:`, error);
+          return {
+            id: Date.now() + index,
+            username: username.trim(),
+            filters,
+            status: 'failed',
+            error: error.message || 'Failed to create job',
+            tweetCount: 0
+          };
+        }
+      })
+    );
 
     setQueue(newQueue);
-    setIsProcessing(true);
-    setCurrentIndex(0);
     
-    // Start processing immediately
-    setTimeout(() => {
-      startScrape(0);
-    }, 100);
+    // Start polling for status updates
+    const validScrapeIds = newQueue
+      .filter(item => item.scrapeId && item.status !== 'failed')
+      .map(item => item.scrapeId);
+    
+    if (validScrapeIds.length > 0) {
+      startPolling(validScrapeIds);
+      
+      // Also do an immediate poll
+      setTimeout(() => {
+        const accessToken = session?.access_token;
+        if (accessToken) {
+          Promise.all(
+            validScrapeIds.map(async (scrapeId) => {
+              try {
+                const response = await fetch(`${SOCKET_URL}/api/scrapes/${scrapeId}/status`, {
+                  headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                  }
+                });
+                if (response.ok) {
+                  return await response.json();
+                }
+              } catch (error) {
+                console.error('Error in immediate poll:', error);
+              }
+              return null;
+            })
+          ).then(statuses => {
+            setQueue(prev => prev.map(item => {
+              const status = statuses.find(s => s && s.id === item.scrapeId);
+              if (!status) return item;
+
+              return {
+                ...item,
+                status: status.status,
+                tweetCount: status.stats?.total || 0,
+                error: status.error_message
+              };
+            }));
+          });
+        }
+      }, 500);
+    } else {
+      setIsProcessing(false);
+    }
   };
 
   const handleRemove = (id) => {
-    setQueue(prev => prev.filter(item => item.id !== id));
+    setQueue(prev => {
+      const newQueue = prev.filter(item => item.id !== id);
+      // If queue becomes empty, stop processing
+      if (newQueue.length === 0) {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+        }
+        setIsProcessing(false);
+      }
+      return newQueue;
+    });
   };
 
   return (
@@ -211,7 +237,7 @@ export default function BatchScrapePage() {
       <PageHeader
         breadcrumbs={['Home', 'Batch']}
         title="Batch Analysis"
-        subtitle="Analyze multiple X profiles at once"
+        subtitle="Analyze multiple X profiles at once - jobs continue even if you close the page"
       />
 
       <div className="px-4 sm:px-6 lg:px-8 pb-10">
