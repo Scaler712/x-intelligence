@@ -288,7 +288,7 @@ export default function ScraperPage() {
         subtitle="Analyze and collect tweets with advanced filtering"
       />
 
-      <div className="px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <div className="space-y-8">
           {/* Analysis Setup Section */}
           <section className="space-y-6">
@@ -455,15 +455,15 @@ export default function ScraperPage() {
               </div>
             </section>
           )}
+
+          {/* Stats Sidebar - Now in normal flow, not fixed */}
+          {tweets.length > 0 && (
+            <section>
+              <StatsSidebar tweets={finalTweets} />
+            </section>
+          )}
         </div>
       </div>
-
-      {/* Stats Sidebar */}
-      {tweets.length > 0 && (
-        <div className="fixed right-0 top-[120px] w-[280px] pr-8">
-          <StatsSidebar tweets={finalTweets} />
-        </div>
-      )}
     </div>
   );
 }

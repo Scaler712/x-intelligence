@@ -3,14 +3,14 @@ import { calculateEngagementStats, findTopPerformers, analyzePostingTimes } from
 import { extractHook } from '../utils/hooksExtractor';
 
 export default function StatsSidebar({ tweets }) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false); // Closed by default on mobile
   const stats = useMemo(() => calculateEngagementStats(tweets), [tweets]);
   const topPerformers = useMemo(() => findTopPerformers(tweets, 5), [tweets]);
   const postingTimes = useMemo(() => analyzePostingTimes(tweets), [tweets]);
 
   if (tweets.length === 0) {
     return (
-      <div className="bg-[#1a1a1a] rounded-xl p-6">
+      <div className="bg-[#1a1a1a] rounded-xl p-4 sm:p-6">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="w-full flex items-center justify-between"
@@ -39,7 +39,7 @@ export default function StatsSidebar({ tweets }) {
   }
 
   return (
-    <div className="bg-[#1a1a1a] rounded-xl p-6 space-y-6 lg:sticky lg:top-4">
+    <div className="bg-[#1a1a1a] rounded-xl p-4 sm:p-6">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between"
@@ -58,7 +58,7 @@ export default function StatsSidebar({ tweets }) {
       </button>
 
       {isOpen && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 mt-4">
           {/* Engagement Stats */}
           <div className="space-y-3">
             <h4 className="text-[11px] font-bold uppercase tracking-wide text-[#a0a0a0]">

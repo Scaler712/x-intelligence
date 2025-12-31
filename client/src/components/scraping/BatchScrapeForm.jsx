@@ -37,16 +37,16 @@ export default function BatchScrapeForm({ onBatchStart, isProcessing }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormField label="Usernames (one per line)">
           <Textarea
-            rows={8}
+            rows={6}
             value={usernames}
             onChange={(e) => setUsernames(e.target.value)}
             placeholder="elonmusk&#10;naval&#10;pmarca"
-            className="font-mono text-sm"
+            className="font-mono text-sm resize-none"
             disabled={isProcessing}
           />
         </FormField>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Min Likes">
             <Input
               type="number"
